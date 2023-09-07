@@ -1,10 +1,9 @@
 extern crate libloading;
-use std::time::Instant;
 use std::{ffi::CString, os::raw::c_double};
 
 use libloading::{Library, Symbol};
 
-struct LJMWrapper {
+pub struct LJMWrapper {
     pub library: libloading::Library,
 }
 
@@ -50,44 +49,25 @@ impl LJMWrapper {
     }
 
     /// Digitally writes to address
-    pub fn digital_write_to_address(
-        &self,
-        identifier: String,
-        name_to_write: String,
-        value_to_write: u32,
-    ) {
-        let d_write_to_addr: Symbol<extern "C" fn(*const i8, *const i8, c_double)> =
-            unsafe { self.library.get(b"LJM_eWriteAddress").unwrap() };
+    pub fn write_name(&self, handle: i32, name_to_write: String, value_to_write: u32) {
+        let d_write_to_addr: Symbol<extern "C" fn(i32, *const i8, c_double)> =
+            unsafe { self.library.get(b"LJM_eWriteName").unwrap() };
 
-        let id = CString::new(identifier).expect("CString conversion failed");
         let ntw = CString::new(name_to_write).expect("CString conversion failed");
         let vtw = c_double::from(value_to_write);
 
-        d_write_to_addr(id.as_ptr(), ntw.as_ptr(), vtw);
+        d_write_to_addr(handle, ntw.as_ptr(), vtw);
     }
-}
 
-fn main() {
-    let now = Instant::now();
+    pub fn read_name(&self, handle: i32, name_to_read: String) -> f64 {
+        let d_read_from_aadr: Symbol<extern "C" fn(i32, *const i8, c_double)> =
+            unsafe { self.library.get(b"LJM_eReadName").unwrap() };
 
-    let ljm_wrapper = unsafe { LJMWrapper::init() };
+        let ntr = CString::new(name_to_read).expect("CString conversion failed");
+        let vtr = c_double::from(0);
 
-    let elapsed = now.elapsed();
-    println!("Elapsed: {:.2?}", elapsed);
+        d_read_from_aadr(handle, ntr.as_ptr(), vtr);
 
-    let now = Instant::now();
-
-    let (addr, typ) = ljm_wrapper.name_to_address("AIN0".to_string());
-
-    let elapsed = now.elapsed();
-    println!("Elapsed: {:.2?}", elapsed);
-
-    let now = Instant::now();
-
-    ljm_wrapper.digital_write_to_address("AIN0".to_string(), "AIN0_RANGE".to_string(), 15_u32);
-
-    let elapsed = now.elapsed();
-    println!("Elapsed: {:.2?}", elapsed);
-
-    println!("Function result: {}:{}", addr, typ);
+        vtr.into()
+    }
 }

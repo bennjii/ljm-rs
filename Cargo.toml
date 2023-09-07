@@ -1,5 +1,5 @@
 [package]
-name = "ljm-rs"
+name = "ljmrs"
 version = "0.1.0"
 edition = "2021"
 
@@ -7,3 +7,7 @@ edition = "2021"
 
 [dependencies]
 libloading = "0.8"
+
+[lib]
+name = "ljmrs"
+path = "src/lib.rs"
