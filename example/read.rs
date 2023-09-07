@@ -1,6 +1,4 @@
-extern crate ljmrs;
-
-fn load() {
+fn read() {
     let now = Instant::now();
 
     let ljm_wrapper = unsafe { LJMWrapper::init() };
