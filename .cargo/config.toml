@@ -1,2 +1,2 @@
-[build]
-target = "x86_64-apple-darwin"
+# [build]
+# target = "x86_64-apple-darwin"
