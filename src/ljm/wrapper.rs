@@ -1,5 +1,8 @@
 extern crate libloading;
-use std::{ffi::CString, os::raw::c_double};
+use std::{
+    ffi::{c_char, CString},
+    os::raw::c_double,
+};
 
 use libloading::{Library, Symbol};
 
@@ -36,7 +39,7 @@ impl LJMWrapper {
     /// Verifiable with: -
     /// https://labjack.com/pages/support/?doc=/datasheets/t-series-datasheet/31-modbus-map-t-series-datasheet/
     pub fn name_to_address(&self, identifier: String) -> (i32, i32) {
-        let n_to_addr: Symbol<extern "C" fn(*const i8, *mut i32, *mut i32) -> i32> =
+        let n_to_addr: Symbol<extern "C" fn(*const c_char, *mut i32, *mut i32) -> i32> =
             unsafe { self.library.get(b"LJM_NameToAddress").unwrap() };
 
         let name = CString::new(identifier).expect("CString conversion failed");
@@ -50,7 +53,7 @@ impl LJMWrapper {
 
     /// Digitally writes to address
     pub fn write_name(&self, handle: i32, name_to_write: String, value_to_write: u32) {
-        let d_write_to_addr: Symbol<extern "C" fn(i32, *const i8, c_double)> =
+        let d_write_to_addr: Symbol<extern "C" fn(i32, *const c_char, c_double)> =
             unsafe { self.library.get(b"LJM_eWriteName").unwrap() };
 
         let ntw = CString::new(name_to_write).expect("CString conversion failed");
@@ -60,7 +63,7 @@ impl LJMWrapper {
     }
 
     pub fn read_name(&self, handle: i32, name_to_read: String) -> f64 {
-        let d_read_from_aadr: Symbol<extern "C" fn(i32, *const i8, c_double)> =
+        let d_read_from_aadr: Symbol<extern "C" fn(i32, *const c_char, c_double)> =
             unsafe { self.library.get(b"LJM_eReadName").unwrap() };
 
         let ntr = CString::new(name_to_read).expect("CString conversion failed");
