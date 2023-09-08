@@ -2,6 +2,9 @@
 
 A rust library which allows you to connect with the labjack T7 and T8 series through the C/C++ Bindings with a rust abstraction layer for stronger types and safety.
 
+This **does not support** every function yet, you are welcome to create a PR to add any functions you want.
+The original documentation is found [here](https://labjack.com/pages/support/software?doc=/software-driver/ljm-users-guide/ljm-users-guide/).
+
 > Build Target is not specific, but does not support specific ARM64 archs (M1,M2), due to LJM restrictions.
 > Therefore on MacOS you can run with the following:
 > ```
