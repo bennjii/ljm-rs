@@ -25,6 +25,8 @@ impl LJMWrapper {
         }
     }
 
+    /// `unsafe`
+    /// Initializes a labjack interface with the static library.
     pub unsafe fn init() -> Self {
         let library: Library = unsafe {
             let library_path = LJMWrapper::get_library_path();
@@ -52,6 +54,8 @@ impl LJMWrapper {
     }
 
     /// Digitally writes to address
+    /// Takes a handle to the labjack, the name to be written and the value to be written.
+    /// Does not return a value.
     pub fn write_name(&self, handle: i32, name_to_write: String, value_to_write: u32) {
         let d_write_to_addr: Symbol<extern "C" fn(i32, *const c_char, c_double)> =
             unsafe { self.library.get(b"LJM_eWriteName").unwrap() };
@@ -62,6 +66,8 @@ impl LJMWrapper {
         d_write_to_addr(handle, ntw.as_ptr(), vtw);
     }
 
+    /// Reads from a labjack given the handle and name to read.
+    /// Returns an f64 value that is read from the labjack.
     pub fn read_name(&self, handle: i32, name_to_read: String) -> f64 {
         let d_read_from_aadr: Symbol<extern "C" fn(i32, *const c_char, c_double)> =
             unsafe { self.library.get(b"LJM_eReadName").unwrap() };
@@ -72,5 +78,27 @@ impl LJMWrapper {
         d_read_from_aadr(handle, ntr.as_ptr(), vtr);
 
         vtr.into()
+    }
+
+    /// Opens a LabJack and returns the handle id as an i32.
+    pub fn open_jack(&self, identifier: String) -> i32 {
+        let open_s: Symbol<
+            extern "C" fn(*const c_char, *const c_char, *const c_char, *mut i32) -> i32,
+        > = unsafe { self.library.get(b"LJM_OpenS").unwrap() };
+
+        let device_type = CString::new("ANY".to_string()).expect("CString conversion failed");
+        let connection_type = CString::new("ANY".to_string()).expect("CString conversion failed");
+        let ident = CString::new(identifier).expect("CString conversion failed");
+
+        let mut vtr: i32 = 0;
+
+        open_s(
+            device_type.as_ptr(),
+            connection_type.as_ptr(),
+            ident.as_ptr(),
+            &mut vtr,
+        );
+
+        vtr
     }
 }
