@@ -17,7 +17,7 @@ impl LJMWrapper {
         if os == "windows" {
             "LabJackM.dll".to_string()
         } else if os == "linux" {
-            "libLabJackM.so".to_string()
+            "/usr/local/lib/libLabJackM.so".to_string()
         } else if os == "macos" {
             "/usr/local/lib/libLabJackM.dylib".to_string()
         } else {
