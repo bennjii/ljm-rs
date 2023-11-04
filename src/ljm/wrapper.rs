@@ -7,7 +7,11 @@ use std::{
 use libloading::{Library, Symbol};
 
 pub struct LJMWrapper {
-    pub library: libloading::Library,
+    pub library: Library,
+}
+
+pub enum LJMError {
+    StartupError(libloading::Error)
 }
 
 impl LJMWrapper {
@@ -27,13 +31,17 @@ impl LJMWrapper {
 
     /// `unsafe`
     /// Initializes a labjack interface with the static library.
-    pub unsafe fn init() -> Self {
+    pub unsafe fn init() -> Result<Self, LJMError> {
         let library: Library = unsafe {
             let library_path = LJMWrapper::get_library_path();
-            Library::new(library_path).expect("Failed to load library")
+
+            match Library::new(library_path) {
+                Ok(library) => library,
+                Err(error) => return Err(LJMError::StartupError(error))
+            }
         };
 
-        LJMWrapper { library }
+        Ok(LJMWrapper { library })
     }
 
     /// Converts a MODBUS name to its address and type
