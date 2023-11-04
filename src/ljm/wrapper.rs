@@ -10,6 +10,7 @@ pub struct LJMWrapper {
     pub library: Library,
 }
 
+#[derive(Debug)]
 pub enum LJMError {
     StartupError(libloading::Error)
 }
