@@ -16,7 +16,7 @@ pub enum LJMError {
 }
 
 impl LJMWrapper {
-    fn get_library_path() -> String {
+    pub fn get_library_path() -> String {
         let os = std::env::consts::OS;
 
         if os == "windows" {
