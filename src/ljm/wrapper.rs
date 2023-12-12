@@ -5,7 +5,6 @@ use std::{
 };
 
 use libloading::{Library, Symbol};
-use log::error;
 
 pub struct LJMWrapper {
     pub library: Library,
@@ -46,9 +45,13 @@ impl LJMWrapper {
         }
     }
 
-    pub(crate) fn map_err<T>(value: T, error_code: i32) -> Result<T, LJMErrorCode> {
+    pub(crate) fn error_code<T>(value: T, error_code: i32) -> Result<T, LJMError> {
         if error_code != 0 {
-            return Err(LJMWrapper::encode_error(error_code))
+            return Err(
+                LJMError::ErrorCode(
+                    LJMWrapper::encode_error(error_code)
+                )
+            )
         }
 
         Ok(value)
@@ -146,6 +149,6 @@ impl LJMWrapper {
             &mut vtr,
         );
 
-        self.map_err(vtr, error_code)
+        LJMWrapper::map_err(vtr, error_code)
     }
 }
