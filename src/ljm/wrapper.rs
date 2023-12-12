@@ -5,17 +5,55 @@ use std::{
 };
 
 use libloading::{Library, Symbol};
+use log::error;
 
 pub struct LJMWrapper {
     pub library: Library,
 }
 
+/// Taken from:
+/// https://labjack.com/pages/support?doc=%2Fsoftware-driver%2Fljm-users-guide%2Ferror-codes%2F
+///
+/// > Note:
+/// > We ignore the 0 value as NoError, as
+/// > we replace it with a rust Result type.
+pub enum LJMErrorCode {
+    LJMWarning(i32), // 200-399
+    LJMModbusError(i32), // 1200-1216
+    LJMLibraryError(i32), // 1220-1399
+
+    DeviceError(i32), // 2000-2999
+    UserError(i32), // 3900-3999
+
+    Unknown(i32) // For any values outside these ranges.
+}
+
 #[derive(Debug)]
 pub enum LJMError {
-    StartupError(libloading::Error)
+    StartupError(libloading::Error),
+    ErrorCode(LJMErrorCode)
 }
 
 impl LJMWrapper {
+    pub(crate) fn encode_error(error_code: i32) -> LJMErrorCode {
+        match error_code {
+            200..=399 => LJMErrorCode::LJMWarning(error_code - 200),
+            1200..=1216 => LJMErrorCode::LJMModbusError(error_code - 1200),
+            1220..=1399 => LJMErrorCode::LJMLibraryError(error_code - 1220),
+            2000..=2999 => LJMErrorCode::DeviceError(error_code - 2000),
+            3900..=3999 => LJMErrorCode::UserError(error_code - 3900),
+            _ => LJMErrorCode::Unknown(error_code)
+        }
+    }
+
+    pub(crate) fn map_err<T>(value: T, error_code: i32) -> Result<T, LJMErrorCode> {
+        if error_code != 0 {
+            return Err(LJMWrapper::encode_error(error_code))
+        }
+
+        Ok(value)
+    }
+
     pub fn get_library_path() -> String {
         let os = std::env::consts::OS;
 
@@ -90,7 +128,7 @@ impl LJMWrapper {
     }
 
     /// Opens a LabJack and returns the handle id as an i32.
-    pub fn open_jack(&self, identifier: String) -> i32 {
+    pub fn open_jack(&self, identifier: String) -> Result<i32, LJMError> {
         let open_s: Symbol<
             extern "C" fn(*const c_char, *const c_char, *const c_char, *mut i32) -> i32,
         > = unsafe { self.library.get(b"LJM_OpenS").unwrap() };
@@ -101,13 +139,13 @@ impl LJMWrapper {
 
         let mut vtr: i32 = 0;
 
-        open_s(
+        let error_code = open_s(
             device_type.as_ptr(),
             connection_type.as_ptr(),
             ident.as_ptr(),
             &mut vtr,
         );
 
-        vtr
+        self.map_err(vtr, error_code)
     }
 }
