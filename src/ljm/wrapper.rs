@@ -16,6 +16,7 @@ pub struct LJMWrapper {
 /// > Note:
 /// > We ignore the 0 value as NoError, as
 /// > we replace it with a rust Result type.
+#[derive(Debug)]
 pub enum LJMErrorCode {
     LJMWarning(i32), // 200-399
     LJMModbusError(i32), // 1200-1216
@@ -149,6 +150,6 @@ impl LJMWrapper {
             &mut vtr,
         );
 
-        LJMWrapper::map_err(vtr, error_code)
+        LJMWrapper::error_code(vtr, error_code)
     }
 }
