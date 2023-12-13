@@ -1,6 +1,6 @@
 [package]
 name = "ljmrs"
-version = "0.0.9"
+version = "0.0.10"
 description = "Labjack LJM Bindings for Rust"
 license = "MIT"
 edition = "2021"
