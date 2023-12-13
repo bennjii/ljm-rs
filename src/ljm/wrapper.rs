@@ -5,6 +5,7 @@ use std::{
 };
 
 use libloading::{Library, Symbol};
+use crate::ljm::handle::{ConnectionType, DeviceHandleInfo, DeviceType};
 
 pub struct LJMWrapper {
     pub library: Library,
@@ -137,8 +138,10 @@ impl LJMWrapper {
             extern "C" fn(*const c_char, *const c_char, *const c_char, *mut i32) -> i32,
         > = unsafe { self.library.get(b"LJM_OpenS").unwrap() };
 
-        let device_type = CString::new("ANY".to_string()).expect("CString conversion failed");
-        let connection_type = CString::new("ANY".to_string()).expect("CString conversion failed");
+        let device_type = CString::new("ANY".to_string())
+            .expect("CString conversion failed");
+        let connection_type = CString::new("ANY".to_string())
+            .expect("CString conversion failed");
         let ident = CString::new(identifier).expect("CString conversion failed");
 
         let mut vtr: i32 = 0;
@@ -151,5 +154,38 @@ impl LJMWrapper {
         );
 
         LJMWrapper::error_code(vtr, error_code)
+    }
+
+    /// Informs regarding device connection type
+    pub fn get_handle_info(&self, handle: i32) -> Result<DeviceHandleInfo, LJMError> {
+        let get_handle_info: Symbol<
+            extern "C" fn(i32, *mut i32, *mut i32, *mut i32, *mut i32, *mut i32, *mut i32) -> i32,
+        > = unsafe { self.library.get(b"LJM_GetHandleInfo").unwrap() };
+
+        let mut device_type: i32 = 0;
+        let mut connection_type: i32 = 0;
+        let mut serial_number: i32 = 0;
+        let mut ip_address: i32 = 0;
+        let mut port: i32 = 0;
+        let mut max_bytes_per_megabyte: i32 = 0;
+
+        let error_code = get_handle_info(
+            handle,
+            &mut device_type,
+            &mut connection_type,
+            &mut serial_number,
+            &mut ip_address,
+            &mut port,
+            &mut max_bytes_per_megabyte
+        );
+
+        LJMWrapper::error_code(DeviceHandleInfo {
+            device_type: DeviceType::from(device_type),
+            connection_type: ConnectionType::from(connection_type),
+            serial_number,
+            ip_address,
+            port,
+            max_bytes_per_megabyte,
+        }, error_code)
     }
 }
