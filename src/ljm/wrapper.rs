@@ -133,27 +133,33 @@ impl LJMWrapper {
     }
 
     /// Opens a LabJack and returns the handle id as an i32.
-    pub fn open_jack(&self, identifier: String) -> Result<i32, LJMError> {
+    pub fn open_jack(
+        &self,
+        identifier: String,
+        connection_type: ConnectionType,
+        device_type: DeviceType
+    ) -> Result<i32, LJMError> {
         let open_s: Symbol<
             extern "C" fn(*const c_char, *const c_char, *const c_char, *mut i32) -> i32,
         > = unsafe { self.library.get(b"LJM_OpenS").unwrap() };
 
-        let device_type = CString::new("ANY".to_string())
-            .expect("CString conversion failed");
-        let connection_type = CString::new("ANY".to_string())
-            .expect("CString conversion failed");
-        let ident = CString::new(identifier).expect("CString conversion failed");
+        let device_type = CString::new(device_type.to_string())
+            .expect("Device Type :: CString conversion failed");
+        let connection_type = CString::new(connection_type.to_string())
+            .expect("Connection Type :: CString conversion failed");
+        let ident = CString::new(identifier)
+            .expect("LabJack Identifier :: CString conversion failed");
 
-        let mut vtr: i32 = 0;
+        let mut handle_id: i32 = 0;
 
         let error_code = open_s(
             device_type.as_ptr(),
             connection_type.as_ptr(),
             ident.as_ptr(),
-            &mut vtr,
+            &mut handle_id,
         );
 
-        LJMWrapper::error_code(vtr, error_code)
+        LJMWrapper::error_code(handle_id, error_code)
     }
 
     /// Informs regarding device connection type

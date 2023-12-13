@@ -5,7 +5,9 @@ pub enum DeviceType {
     T4,
     T7,
     T8,
+    TSERIES,
     DIGIT,
+    ANY,
     UNKNOWN(i32)
 }
 
@@ -26,6 +28,7 @@ pub enum ConnectionType {
     USB,
     ETHERNET,
     WIFI,
+    ANY,
     UNKNOWN(i32)
 }
 
@@ -67,5 +70,31 @@ impl Display for DeviceHandleInfo {
                 self.serial_number
             )
         )
+    }
+}
+
+impl Display for DeviceType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let str = match self {
+            DeviceType::T4 => "T4",
+            DeviceType::T7 => "T7",
+            DeviceType::T8 => "T8",
+            DeviceType::TSERIES => "TSERIES",
+            DeviceType::DIGIT => "DIGIT",
+            DeviceType::ANY | DeviceType::UNKNOWN(_) => "ANY"
+        }.to_string();
+        write!(f, "{}", str)
+    }
+}
+
+impl Display for ConnectionType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let str = match self {
+            ConnectionType::USB => "USB",
+            ConnectionType::WIFI => "WIFI",
+            ConnectionType::ETHERNET => "ETHERNET",
+            ConnectionType::ANY | ConnectionType::UNKNOWN(_) => "ANY"
+        }.to_string();
+        write!(f, "{}", str)
     }
 }
