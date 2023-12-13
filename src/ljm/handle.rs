@@ -1,12 +1,11 @@
 use std::fmt::{Display, Formatter};
-use crate::ljm::handle::ConnectionType::UNKNOWN;
 
 #[derive(Clone, Debug)]
 pub enum DeviceType {
-    T4 = 4,
-    T7 = 7,
-    T8 = 8,
-    DIGIT = 200,
+    T4,
+    T7,
+    T8,
+    DIGIT,
     UNKNOWN(i32)
 }
 
@@ -17,16 +16,16 @@ impl From<i32> for DeviceType {
             7 => DeviceType::T7,
             8 => DeviceType::T8,
             200 => DeviceType::DIGIT,
-            value => UNKNOWN(value)
+            value => DeviceType::UNKNOWN(value)
         }
     }
 }
 
 #[derive(Clone, Debug)]
 pub enum ConnectionType {
-    USB = 1,
-    ETHERNET = 3,
-    WIFI = 4,
+    USB,
+    ETHERNET,
+    WIFI,
     UNKNOWN(i32)
 }
 
@@ -36,7 +35,7 @@ impl From<i32> for ConnectionType {
             1 => ConnectionType::USB,
             3 => ConnectionType::ETHERNET,
             4 => ConnectionType::WIFI,
-            value => UNKNOWN(value)
+            value => ConnectionType::UNKNOWN(value)
         }
     }
 }
@@ -58,7 +57,7 @@ impl Display for DeviceHandleInfo {
         // SERIAL_NUMBER
 
         write!(f,
-            format!(
+            "{}", format!(
                 "{:?} on {:?} @ {}B/MB\n{}:{}\n{}",
                 self.device_type,
                 self.connection_type,
