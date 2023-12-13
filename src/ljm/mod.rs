@@ -1,4 +1,5 @@
 pub mod wrapper;
-mod handle;
+pub mod handle;
 
 pub use wrapper::*;
+pub use handle::*;
