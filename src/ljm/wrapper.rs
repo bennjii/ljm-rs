@@ -123,13 +123,13 @@ impl LJMWrapper {
     /// Reads from a labjack given the handle and name to read.
     /// Returns an f64 value that is read from the labjack.
     pub fn read_name(&self, handle: i32, name_to_read: String) -> Result<f64, LJMError> {
-        let d_read_from_aadr: Symbol<extern "C" fn(i32, *const c_char, c_double) -> i32> =
+        let d_read_from_aadr: Symbol<extern "C" fn(i32, *const c_char, *mut c_double) -> i32> =
             unsafe { self.library.get(b"LJM_eReadName").unwrap() };
 
         let ntr = CString::new(name_to_read).expect("CString conversion failed");
-        let vtr = c_double::from(0);
+        let mut vtr = c_double::from(0);
 
-        let error_code = d_read_from_aadr(handle, ntr.as_ptr(), vtr);
+        let error_code = d_read_from_aadr(handle, ntr.as_ptr(), &mut vtr);
 
         LJMWrapper::error_code(vtr, error_code)
     }
