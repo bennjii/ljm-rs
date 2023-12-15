@@ -3,6 +3,7 @@ use std::{
     ffi::{c_char, CString},
     os::raw::c_double,
 };
+use std::ffi::c_uint;
 
 use libloading::{Library, Symbol};
 use crate::ljm::handle::{ConnectionType, DeviceHandleInfo, DeviceType};
@@ -32,7 +33,8 @@ pub enum LJMErrorCode {
 #[derive(Debug)]
 pub enum LJMError {
     StartupError(libloading::Error),
-    ErrorCode(LJMErrorCode)
+    ErrorCode(LJMErrorCode),
+    LibraryError(String)
 }
 
 impl LJMWrapper {
@@ -162,6 +164,30 @@ impl LJMWrapper {
         );
 
         LJMWrapper::error_code(handle_id, error_code)
+    }
+
+    /// Converts an IPV4 numerical representation, outputting the corresponding
+    /// decimal-dot notation for it.
+    pub fn number_to_ip(&self, number: i32) -> Result<String, LJMError> {
+        let d_number_to_ip: Symbol<extern "C" fn(*const c_uint, *mut c_char) -> i32> =
+            unsafe { self.library.get(b"LJM_NumberToIP").unwrap() };
+
+        let number: c_uint = c_uint::try_from(number).map_err(
+            | error | LJMError::LibraryError(format!("Unable to convert number into C unsigned integer. {}", error))
+        )?;
+
+        let ip_address = CString::new("").expect("CString conversion failed");
+
+        let ip_pointer = ip_address.into_raw();
+
+        let error_code = d_number_to_ip(&number, ip_pointer);
+
+        let retrieved_pointer = unsafe { CString::from_raw(ip_pointer) };
+        let recovered_ip = retrieved_pointer.into_string().map_err(
+            | error | LJMError::LibraryError(format!("Unable to retrieve IP pointer. {}", error))
+        )?;
+
+        LJMWrapper::error_code(recovered_ip, error_code)
     }
 
     /// Informs regarding device connection type
