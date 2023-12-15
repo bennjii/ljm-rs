@@ -127,7 +127,7 @@ impl LJMWrapper {
             unsafe { self.library.get(b"LJM_eReadName").unwrap() };
 
         let ntr = CString::new(name_to_read).expect("CString conversion failed");
-        let mut vtr = c_double::from(0);
+        let mut vtr = c_double::from(-1);
 
         let error_code = d_read_from_aadr(handle, ntr.as_ptr(), &mut vtr);
 

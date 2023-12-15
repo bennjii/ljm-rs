@@ -8,24 +8,24 @@ fn load() {
 
     let ljm_wrapper = unsafe { LJMWrapper::init() }.unwrap();
 
+    let open_call = ljm_wrapper.open_jack(
+        ljmrs::DeviceType::ANY,
+        ljmrs::ConnectionType::ANY,
+       "-2".to_string(),
+    ).expect("Could not open DEMO LabJack");
+
+    println!("Opened LabJack, got handle: {}", open_call);
+
     let elapsed = now.elapsed();
     println!("Elapsed: {:.2?}", elapsed);
 
     let now = Instant::now();
 
-    let (addr, typ) = ljm_wrapper.name_to_address("AIN0".to_string()).expect("Expected NTA");
+    let (addr, typ) = ljm_wrapper.name_to_address("TEST_INT32".to_string()).expect("Expected NTA");
+    println!("TEST_INT32 => Address: {}, Type: {}", addr, typ);
 
     let elapsed = now.elapsed();
     println!("Elapsed: {:.2?}", elapsed);
-
-    let now = Instant::now();
-
-    ljm_wrapper.write_name(-2, "AIN0_RANGE".to_string(), 15_u32).expect("Expected NTA");
-
-    let elapsed = now.elapsed();
-    println!("Elapsed: {:.2?}", elapsed);
-
-    println!("Function result: {}:{}", addr, typ);
 }
 
 fn main() {

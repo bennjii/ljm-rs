@@ -1,3 +1,5 @@
+extern crate ljmrs;
+
 use std::time::Instant;
 use ljmrs::LJMWrapper;
 
@@ -6,24 +8,34 @@ fn read() {
 
     let ljm_wrapper = unsafe { LJMWrapper::init() }.unwrap();
 
+    let open_call = ljm_wrapper.open_jack(
+        ljmrs::DeviceType::ANY,
+        ljmrs::ConnectionType::ANY,
+        "-2".to_string(),
+    ).expect("Could not open DEMO LabJack");
+
+    println!("Opened LabJack, got handle: {}", open_call);
+
     let elapsed = now.elapsed();
     println!("Elapsed: {:.2?}", elapsed);
 
     let now = Instant::now();
 
-    let (addr, typ) = ljm_wrapper.name_to_address("AIN0".to_string()).expect("Expected AIN0");
+    let read_value = ljm_wrapper.read_name(open_call, "TEST_INT32".to_string()).expect("Expected Value");
+    println!("Got: {}", read_value);
 
     let elapsed = now.elapsed();
     println!("Elapsed: {:.2?}", elapsed);
+
+    ljm_wrapper.write_name(open_call, "TEST_INT32".to_string(), 15).expect("Expected Value");
 
     let now = Instant::now();
 
-    ljm_wrapper.read_name(-2, "AIN0".to_string()).expect("Expected read to succeed");
+    let read_value = ljm_wrapper.read_name(open_call, "TEST_INT32".to_string()).expect("Expected Value");
+    println!("Got: {}", read_value);
 
     let elapsed = now.elapsed();
     println!("Elapsed: {:.2?}", elapsed);
-
-    println!("Function result: {}:{}", addr, typ);
 }
 
 fn main() {
