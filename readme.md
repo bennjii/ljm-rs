@@ -11,6 +11,7 @@ The original documentation is found [here](https://labjack.com/pages/support/sof
 > cargo build && arch -x86_64 target/x86_64-apple-darwin/debug/ljm-rs
 > ```
 > This requires [Rosetta 2](https://support.apple.com/en-us/HT211861).
+> Alternatively, beta software is becoming avaliable from LabJack - to run this without rosetta.
 
 You can install the [crate](https://crates.io/crates/ljmrs) with:
 ```
