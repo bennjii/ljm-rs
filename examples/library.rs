@@ -2,8 +2,9 @@ extern crate ljmrs;
 
 use ljmrs::LJMWrapper;
 
-fn info() {
-    let ljm_wrapper = unsafe { LJMWrapper::init(None) }.unwrap();
+fn library() {
+    let unique_library_location = "/usr/lib/ljm/libLabJackM.dylib".to_string();
+    let ljm_wrapper = unsafe { LJMWrapper::init(Some(unique_library_location)) }.unwrap();
 
     let open_call = ljm_wrapper
         .open_jack(
@@ -14,13 +15,8 @@ fn info() {
         .expect("Could not open DEMO LabJack");
 
     println!("Opened LabJack, got handle: {}", &open_call);
-
-    let info =
-        LJMWrapper::get_handle_info(&ljm_wrapper, open_call).expect("Handle verification failed.");
-
-    println!("--- LabJack Info ---\n{}\n--- LabJack Info ---", info);
 }
 
 fn main() {
-    info();
+    library();
 }

@@ -8,6 +8,7 @@ pub enum DeviceType {
     TSERIES,
     DIGIT,
     ANY,
+    EMULATED(i32),
     UNKNOWN(i32),
 }
 
@@ -18,6 +19,7 @@ impl From<i32> for DeviceType {
             7 => DeviceType::T7,
             8 => DeviceType::T8,
             200 => DeviceType::DIGIT,
+            -999..=-1 => DeviceType::EMULATED(value),
             value => DeviceType::UNKNOWN(value),
         }
     }
@@ -48,7 +50,7 @@ pub struct DeviceHandleInfo {
     pub device_type: DeviceType,
     pub connection_type: ConnectionType,
     pub serial_number: i32,
-    pub ip_address: i32,
+    pub ip_address: String,
     pub port: i32,
     pub max_bytes_per_megabyte: i32,
 }
@@ -61,7 +63,7 @@ impl Display for DeviceHandleInfo {
 
         write!(
             f,
-            "{:?} on {:?} @ {}B/MB\n{}:{}\n{}",
+            "{} on {:?} @ {}B/MB\n{}:{}\n{}",
             self.device_type,
             self.connection_type,
             self.max_bytes_per_megabyte,
@@ -75,14 +77,18 @@ impl Display for DeviceHandleInfo {
 impl Display for DeviceType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let str = match self {
-            DeviceType::T4 => "T4",
-            DeviceType::T7 => "T7",
-            DeviceType::T8 => "T8",
-            DeviceType::TSERIES => "TSERIES",
-            DeviceType::DIGIT => "DIGIT",
-            DeviceType::ANY | DeviceType::UNKNOWN(_) => "ANY",
-        }
-        .to_string();
+            DeviceType::T4 => "T4".to_string(),
+            DeviceType::T7 => "T7".to_string(),
+            DeviceType::T8 => "T8".to_string(),
+            DeviceType::TSERIES => "TSERIES".to_string(),
+
+            DeviceType::DIGIT => "DIGIT".to_string(),
+            DeviceType::ANY => "ANY".to_string(),
+
+            DeviceType::EMULATED(value) => format!("EMULATED::[{value}]"),
+            DeviceType::UNKNOWN(value) => format!("ANY::[{value}]"),
+        };
+
         write!(f, "{}", str)
     }
 }

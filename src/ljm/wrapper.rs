@@ -1,4 +1,3 @@
-extern crate libloading;
 use std::ffi::c_uint;
 use std::{
     ffi::{c_char, CString},
@@ -12,8 +11,7 @@ pub struct LJMWrapper {
     pub library: Library,
 }
 
-/// Taken from:
-/// https://labjack.com/pages/support?doc=%2Fsoftware-driver%2Fljm-users-guide%2Ferror-codes%2F
+/// Taken from: [LJM ErrorCodes](https://labjack.com/pages/support?doc=%2Fsoftware-driver%2Fljm-users-guide%2Ferror-codes%2F)
 ///
 /// > Note:
 /// > We ignore the 0 value as NoError, as
@@ -93,8 +91,7 @@ impl LJMWrapper {
 
     /// Converts a MODBUS name to its address and type
     /// Returns a tuple of (address, type) in (i32, i32) format.
-    /// Verifiable with: -
-    /// https://labjack.com/pages/support/?doc=/datasheets/t-series-datasheet/31-modbus-map-t-series-datasheet/
+    /// Verifiable with: - [LabJack Modbus Map](https://labjack.com/pages/support/?doc=/datasheets/t-series-datasheet/31-modbus-map-t-series-datasheet/)
     pub fn name_to_address(&self, identifier: String) -> Result<(i32, i32), LJMError> {
         let n_to_addr: Symbol<extern "C" fn(*const c_char, *mut i32, *mut i32) -> i32> =
             unsafe { self.library.get(b"LJM_NameToAddress").unwrap() };
@@ -243,7 +240,7 @@ impl LJMWrapper {
                 device_type: DeviceType::from(device_type),
                 connection_type: ConnectionType::from(connection_type),
                 serial_number,
-                ip_address,
+                ip_address: self.number_to_ip(ip_address)?,
                 port,
                 max_bytes_per_megabyte,
             },
