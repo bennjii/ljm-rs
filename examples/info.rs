@@ -19,6 +19,14 @@ fn info() {
         LJMWrapper::get_handle_info(&ljm_wrapper, open_call).expect("Handle verification failed.");
 
     println!("--- LabJack Info ---\n{}\n--- LabJack Info ---", info);
+
+    // The C String recovery is an unsafe process
+    let ip = unsafe {
+        ljm_wrapper
+            .number_to_ip(info.ip_address)
+            .expect("Could not convert IP.")
+    };
+    println!("IP: {ip}");
 }
 
 fn main() {

@@ -1,6 +1,5 @@
-use std::ffi::c_uint;
 use std::{
-    ffi::{c_char, CString},
+    ffi::{c_char, c_uint, CString},
     os::raw::c_double,
 };
 
@@ -187,7 +186,12 @@ impl LJMWrapper {
 
     /// Converts an IPV4 numerical representation, outputting the corresponding
     /// decimal-dot notation for it.
-    pub fn number_to_ip(&self, number: i32) -> Result<String, LJMError> {
+    ///
+    /// # Safety
+    /// This function is unsafe due to C pointer recovery. Different systems
+    /// will handle this behaviour differently, use with caution. Test experimentally,
+    /// before ever using in a production environment.
+    pub unsafe fn number_to_ip(&self, number: i32) -> Result<String, LJMError> {
         let d_number_to_ip: Symbol<extern "C" fn(*const c_uint, *mut c_char) -> i32> =
             unsafe { self.library.get(b"LJM_NumberToIP").unwrap() };
 
@@ -198,8 +202,7 @@ impl LJMWrapper {
             ))
         })?;
 
-        let ip_address = CString::new("").expect("CString conversion failed");
-
+        let ip_address = CString::new("000.000.000.000").expect("CString conversion failed");
         let ip_pointer = ip_address.into_raw();
 
         let error_code = d_number_to_ip(&number, ip_pointer);
@@ -239,8 +242,8 @@ impl LJMWrapper {
             DeviceHandleInfo {
                 device_type: DeviceType::from(device_type),
                 connection_type: ConnectionType::from(connection_type),
+                ip_address,
                 serial_number,
-                ip_address: self.number_to_ip(ip_address)?,
                 port,
                 max_bytes_per_megabyte,
             },

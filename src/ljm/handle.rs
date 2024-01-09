@@ -49,10 +49,11 @@ impl From<i32> for ConnectionType {
 pub struct DeviceHandleInfo {
     pub device_type: DeviceType,
     pub connection_type: ConnectionType,
-    pub serial_number: i32,
-    pub ip_address: String,
-    pub port: i32,
+    pub ip_address: i32,
+
     pub max_bytes_per_megabyte: i32,
+    pub serial_number: i32,
+    pub port: i32,
 }
 
 impl Display for DeviceHandleInfo {
@@ -63,7 +64,7 @@ impl Display for DeviceHandleInfo {
 
         write!(
             f,
-            "{} on {:?} @ {}B/MB\n{}:{}\n{}",
+            "{} on {} @ {}B/MB\n{}:{} => {}",
             self.device_type,
             self.connection_type,
             self.max_bytes_per_megabyte,
