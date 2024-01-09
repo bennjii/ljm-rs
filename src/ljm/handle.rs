@@ -8,7 +8,7 @@ pub enum DeviceType {
     TSERIES,
     DIGIT,
     ANY,
-    UNKNOWN(i32)
+    UNKNOWN(i32),
 }
 
 impl From<i32> for DeviceType {
@@ -18,7 +18,7 @@ impl From<i32> for DeviceType {
             7 => DeviceType::T7,
             8 => DeviceType::T8,
             200 => DeviceType::DIGIT,
-            value => DeviceType::UNKNOWN(value)
+            value => DeviceType::UNKNOWN(value),
         }
     }
 }
@@ -29,7 +29,7 @@ pub enum ConnectionType {
     ETHERNET,
     WIFI,
     ANY,
-    UNKNOWN(i32)
+    UNKNOWN(i32),
 }
 
 impl From<i32> for ConnectionType {
@@ -38,7 +38,7 @@ impl From<i32> for ConnectionType {
             1 => ConnectionType::USB,
             3 => ConnectionType::ETHERNET,
             4 => ConnectionType::WIFI,
-            value => ConnectionType::UNKNOWN(value)
+            value => ConnectionType::UNKNOWN(value),
         }
     }
 }
@@ -59,16 +59,15 @@ impl Display for DeviceHandleInfo {
         // 000.000.000:0000
         // SERIAL_NUMBER
 
-        write!(f,
-            "{}", format!(
-                "{:?} on {:?} @ {}B/MB\n{}:{}\n{}",
-                self.device_type,
-                self.connection_type,
-                self.max_bytes_per_megabyte,
-                self.ip_address,
-                self.port,
-                self.serial_number
-            )
+        write!(
+            f,
+            "{:?} on {:?} @ {}B/MB\n{}:{}\n{}",
+            self.device_type,
+            self.connection_type,
+            self.max_bytes_per_megabyte,
+            self.ip_address,
+            self.port,
+            self.serial_number
         )
     }
 }
@@ -81,8 +80,9 @@ impl Display for DeviceType {
             DeviceType::T8 => "T8",
             DeviceType::TSERIES => "TSERIES",
             DeviceType::DIGIT => "DIGIT",
-            DeviceType::ANY | DeviceType::UNKNOWN(_) => "ANY"
-        }.to_string();
+            DeviceType::ANY | DeviceType::UNKNOWN(_) => "ANY",
+        }
+        .to_string();
         write!(f, "{}", str)
     }
 }
@@ -93,8 +93,9 @@ impl Display for ConnectionType {
             ConnectionType::USB => "USB",
             ConnectionType::WIFI => "WIFI",
             ConnectionType::ETHERNET => "ETHERNET",
-            ConnectionType::ANY | ConnectionType::UNKNOWN(_) => "ANY"
-        }.to_string();
+            ConnectionType::ANY | ConnectionType::UNKNOWN(_) => "ANY",
+        }
+        .to_string();
         write!(f, "{}", str)
     }
 }
