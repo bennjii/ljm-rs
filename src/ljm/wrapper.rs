@@ -91,6 +91,7 @@ impl LJMWrapper {
     /// Converts a MODBUS name to its address and type
     /// Returns a tuple of (address, type) in (i32, i32) format.
     /// Verifiable with: - [LabJack Modbus Map](https://labjack.com/pages/support/?doc=/datasheets/t-series-datasheet/31-modbus-map-t-series-datasheet/)
+    #[doc(alias = "LJM_NameToAddress")]
     pub fn name_to_address(&self, identifier: String) -> Result<(i32, i32), LJMError> {
         let n_to_addr: Symbol<extern "C" fn(*const c_char, *mut i32, *mut i32) -> i32> =
             unsafe { self.library.get(b"LJM_NameToAddress").unwrap() };
@@ -107,6 +108,7 @@ impl LJMWrapper {
     /// Digitally writes to address
     /// Takes a handle to the labjack, the name to be written and the value to be written.
     /// Does not return a value.
+    #[doc(alias = "LJM_eWriteName")]
     pub fn write_name(
         &self,
         handle: i32,
@@ -126,6 +128,7 @@ impl LJMWrapper {
 
     /// Reads from a labjack given the handle and name to read.
     /// Returns an f64 value that is read from the labjack.
+    #[doc(alias = "LJM_eReadName")]
     pub fn read_name(&self, handle: i32, name_to_read: String) -> Result<f64, LJMError> {
         let d_read_from_aadr: Symbol<extern "C" fn(i32, *const c_char, *mut c_double) -> i32> =
             unsafe { self.library.get(b"LJM_eReadName").unwrap() };
@@ -139,6 +142,7 @@ impl LJMWrapper {
     }
 
     /// Opens a LabJack and returns the handle id as an i32.
+    #[doc(alias = "LJM_OpenS")]
     pub fn open_jack(
         &self,
         device_type: DeviceType,
@@ -169,6 +173,7 @@ impl LJMWrapper {
     }
 
     /// Closes a LabJack given it's handle id as an i32.
+    #[doc(alias = "LJM_Close")]
     pub fn close_jack(&self, handle_id: i32) -> Result<i32, LJMError> {
         let close: Symbol<extern "C" fn(i32) -> i32> =
             unsafe { self.library.get(b"LJM_Close").unwrap() };
@@ -177,6 +182,7 @@ impl LJMWrapper {
     }
 
     /// Closes all LabJacks connected.
+    #[doc(alias = "LJM_CloseAll")]
     pub fn close_all(&self, handle_id: i32) -> Result<i32, LJMError> {
         let close_all: Symbol<extern "C" fn() -> i32> =
             unsafe { self.library.get(b"LJM_CloseAll").unwrap() };
@@ -191,6 +197,7 @@ impl LJMWrapper {
     /// This function is unsafe due to C pointer recovery. Different systems
     /// will handle this behaviour differently, use with caution. Test experimentally,
     /// before ever using in a production environment.
+    #[doc(alias = "LJM_NumberToIP")]
     pub unsafe fn number_to_ip(&self, number: i32) -> Result<String, LJMError> {
         let d_number_to_ip: Symbol<extern "C" fn(*const c_uint, *mut c_char) -> i32> =
             unsafe { self.library.get(b"LJM_NumberToIP").unwrap() };
@@ -216,6 +223,7 @@ impl LJMWrapper {
     }
 
     /// Informs regarding device connection type
+    #[doc(alias = "LJM_GetHandleInfo")]
     pub fn get_handle_info(&self, handle: i32) -> Result<DeviceHandleInfo, LJMError> {
         let get_handle_info: Symbol<
             extern "C" fn(i32, *mut i32, *mut i32, *mut i32, *mut i32, *mut i32, *mut i32) -> i32,
