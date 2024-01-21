@@ -3,11 +3,12 @@ use std::{
     os::raw::c_double,
 };
 
-use crate::ljm::handle::{ConnectionType, DeviceHandleInfo, DeviceType};
 use libloading::{Library, Symbol};
 
+use crate::ljm::handle::{ConnectionType, DeviceHandleInfo, DeviceType};
+
 pub struct LJMWrapper {
-    pub library: Library,
+    pub library: Option<Library>,
 }
 
 /// Taken from: [LJM ErrorCodes](https://labjack.com/pages/support?doc=%2Fsoftware-driver%2Fljm-users-guide%2Ferror-codes%2F)
@@ -17,11 +18,14 @@ pub struct LJMWrapper {
 /// > we replace it with a rust Result type.
 #[derive(Debug)]
 pub enum LJMErrorCode {
-    LJMWarning(i32),      // 200-399
-    LJMModbusError(i32),  // 1200-1216
+    LJMWarning(i32),
+    // 200-399
+    LJMModbusError(i32),
+    // 1200-1216
     LJMLibraryError(i32), // 1220-1399
 
-    DeviceError(i32), // 2000-2999
+    DeviceError(i32),
+    // 2000-2999
     UserError(i32),   // 3900-3999
 
     Unknown(i32), // For any values outside these ranges.
@@ -32,6 +36,14 @@ pub enum LJMError {
     StartupError(libloading::Error),
     ErrorCode(LJMErrorCode),
     LibraryError(String),
+    LibloadingError(libloading::Error),
+    Uninitialized,
+}
+
+impl Into<LJMError> for libloading::Error {
+    fn into(self) -> LJMError {
+        LJMError::LibloadingError(self)
+    }
 }
 
 impl LJMWrapper {
@@ -68,6 +80,32 @@ impl LJMWrapper {
         }
     }
 
+    fn get_library(&self) -> Result<&Library, LJMError> {
+        match &self.library {
+            Some(val) => Ok(val),
+            None => Err(LJMError::Uninitialized)
+        }
+    }
+
+    unsafe fn get_c_function<T>(&self, name: &[u8]) -> Result<Symbol<T>, LJMError> {
+        let library = self.get_library()?;
+
+        match library.get::<T>(name) {
+            Ok(v) => Ok(v),
+            Err(e) => Err(e.into())
+        }
+    }
+
+    pub fn is_initialised(&self) -> bool {
+        self.library.is_some()
+    }
+
+    pub fn dummy() -> Self {
+        Self {
+            library: None
+        }
+    }
+
     /// `unsafe`
     /// Initializes a labjack interface with the static library.
     ///
@@ -85,7 +123,7 @@ impl LJMWrapper {
             }
         };
 
-        Ok(LJMWrapper { library })
+        Ok(LJMWrapper { library: Some(library) })
     }
 
     /// Converts a MODBUS name to its address and type
@@ -94,7 +132,9 @@ impl LJMWrapper {
     #[doc(alias = "LJM_NameToAddress")]
     pub fn name_to_address(&self, identifier: String) -> Result<(i32, i32), LJMError> {
         let n_to_addr: Symbol<extern "C" fn(*const c_char, *mut i32, *mut i32) -> i32> =
-            unsafe { self.library.get(b"LJM_NameToAddress").unwrap() };
+            unsafe {
+                self.get_c_function(b"LJM_NameToAddress")?
+            };
 
         let name = CString::new(identifier).expect("CString conversion failed");
         let mut address: i32 = 0;
@@ -116,7 +156,7 @@ impl LJMWrapper {
         value_to_write: u32,
     ) -> Result<(), LJMError> {
         let d_write_to_addr: Symbol<extern "C" fn(i32, *const c_char, c_double) -> i32> =
-            unsafe { self.library.get(b"LJM_eWriteName").unwrap() };
+            unsafe { self.get_c_function(b"LJM_eWriteName")? };
 
         let ntw = CString::new(name_to_write).expect("CString conversion failed");
         let vtw = c_double::from(value_to_write);
@@ -131,7 +171,7 @@ impl LJMWrapper {
     #[doc(alias = "LJM_eReadName")]
     pub fn read_name(&self, handle: i32, name_to_read: String) -> Result<f64, LJMError> {
         let d_read_from_aadr: Symbol<extern "C" fn(i32, *const c_char, *mut c_double) -> i32> =
-            unsafe { self.library.get(b"LJM_eReadName").unwrap() };
+            unsafe { self.get_c_function(b"LJM_eReadName")? };
 
         let ntr = CString::new(name_to_read).expect("CString conversion failed");
         let mut vtr = c_double::from(-1);
@@ -151,7 +191,7 @@ impl LJMWrapper {
     ) -> Result<i32, LJMError> {
         let open_s: Symbol<
             extern "C" fn(*const c_char, *const c_char, *const c_char, *mut i32) -> i32,
-        > = unsafe { self.library.get(b"LJM_OpenS").unwrap() };
+        > = unsafe { self.get_c_function(b"LJM_OpenS")? };
 
         let device_type = CString::new(device_type.to_string())
             .expect("Device Type :: CString conversion failed");
@@ -176,7 +216,7 @@ impl LJMWrapper {
     #[doc(alias = "LJM_Close")]
     pub fn close_jack(&self, handle_id: i32) -> Result<i32, LJMError> {
         let close: Symbol<extern "C" fn(i32) -> i32> =
-            unsafe { self.library.get(b"LJM_Close").unwrap() };
+            unsafe { self.get_c_function(b"LJM_Close")? };
 
         LJMWrapper::error_code(handle_id, close(handle_id))
     }
@@ -185,7 +225,7 @@ impl LJMWrapper {
     #[doc(alias = "LJM_CloseAll")]
     pub fn close_all(&self, handle_id: i32) -> Result<i32, LJMError> {
         let close_all: Symbol<extern "C" fn() -> i32> =
-            unsafe { self.library.get(b"LJM_CloseAll").unwrap() };
+            unsafe { self.get_c_function(b"LJM_CloseAll")? };
 
         LJMWrapper::error_code(handle_id, close_all())
     }
@@ -200,7 +240,7 @@ impl LJMWrapper {
     #[doc(alias = "LJM_NumberToIP")]
     pub unsafe fn number_to_ip(&self, number: i32) -> Result<String, LJMError> {
         let d_number_to_ip: Symbol<extern "C" fn(*const c_uint, *mut c_char) -> i32> =
-            unsafe { self.library.get(b"LJM_NumberToIP").unwrap() };
+            unsafe { self.get_c_function(b"LJM_NumberToIP")? };
 
         let number: c_uint = c_uint::try_from(number).map_err(|error| {
             LJMError::LibraryError(format!(
@@ -227,7 +267,7 @@ impl LJMWrapper {
     pub fn get_handle_info(&self, handle: i32) -> Result<DeviceHandleInfo, LJMError> {
         let get_handle_info: Symbol<
             extern "C" fn(i32, *mut i32, *mut i32, *mut i32, *mut i32, *mut i32, *mut i32) -> i32,
-        > = unsafe { self.library.get(b"LJM_GetHandleInfo").unwrap() };
+        > = unsafe { self.get_c_function(b"LJM_GetHandleInfo")? };
 
         let mut device_type: i32 = 0;
         let mut connection_type: i32 = 0;
