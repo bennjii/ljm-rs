@@ -4,11 +4,24 @@ use std::{
 };
 
 use libloading::{Library, Symbol};
+use serde::{Deserialize, Deserializer};
 
 use crate::ljm::handle::{ConnectionType, DeviceHandleInfo, DeviceType};
 
 pub struct LJMWrapper {
     pub library: Option<Library>,
+}
+
+// We always return a dummy wrapper (uninitialized library)
+// When being deserialized, as there is no way to correctly serialize
+// The wrapper.
+impl<'de> Deserialize<'de> for LJMWrapper {
+    fn deserialize<D>(_deserializer: D) -> Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+    {
+        Ok(LJMWrapper::dummy())
+    }
 }
 
 /// Taken from: [LJM ErrorCodes](https://labjack.com/pages/support?doc=%2Fsoftware-driver%2Fljm-users-guide%2Ferror-codes%2F)
