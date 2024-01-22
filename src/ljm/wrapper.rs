@@ -8,6 +8,8 @@ use serde::{Deserialize, Deserializer};
 
 use crate::ljm::handle::{ConnectionType, DeviceHandleInfo, DeviceType};
 
+static LJM_DUMMY: LJMWrapper = LJMWrapper::dummy();
+
 pub struct LJMWrapper {
     pub library: Option<Library>,
 }
@@ -93,6 +95,10 @@ impl LJMWrapper {
         }
     }
 
+    pub fn wrapper_reference() -> &'static LJMWrapper {
+        &LJM_DUMMY
+    }
+
     fn get_library(&self) -> Result<&Library, LJMError> {
         match &self.library {
             Some(val) => Ok(val),
@@ -109,14 +115,14 @@ impl LJMWrapper {
         }
     }
 
-    pub fn is_initialised(&self) -> bool {
-        self.library.is_some()
-    }
-
-    pub fn dummy() -> Self {
+    const fn dummy() -> Self {
         Self {
             library: None
         }
+    }
+
+    pub fn is_initialised(&self) -> bool {
+        self.library.is_some()
     }
 
     /// `unsafe`
