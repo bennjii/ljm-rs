@@ -4,6 +4,7 @@ use std::{
 };
 
 use libloading::{Library, Symbol};
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Deserializer};
 
 use crate::ljm::handle::{ConnectionType, DeviceHandleInfo, DeviceType};
@@ -17,10 +18,11 @@ pub struct LJMWrapper {
 // We always return a dummy wrapper (uninitialized library)
 // When being deserialized, as there is no way to correctly serialize
 // The wrapper.
+#[cfg(feature = "serde")]
 impl<'de> Deserialize<'de> for LJMWrapper {
     fn deserialize<D>(_deserializer: D) -> Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
+    where
+        D: Deserializer<'de>,
     {
         Ok(LJMWrapper::dummy())
     }
@@ -41,7 +43,7 @@ pub enum LJMErrorCode {
 
     DeviceError(i32),
     // 2000-2999
-    UserError(i32),   // 3900-3999
+    UserError(i32), // 3900-3999
 
     Unknown(i32), // For any values outside these ranges.
 }
@@ -55,9 +57,9 @@ pub enum LJMError {
     Uninitialized,
 }
 
-impl Into<LJMError> for libloading::Error {
-    fn into(self) -> LJMError {
-        LJMError::LibloadingError(self)
+impl From<libloading::Error> for LJMError {
+    fn from(value: libloading::Error) -> Self {
+        LJMError::LibloadingError(value)
     }
 }
 
@@ -102,7 +104,7 @@ impl LJMWrapper {
     fn get_library(&self) -> Result<&Library, LJMError> {
         match &self.library {
             Some(val) => Ok(val),
-            None => Err(LJMError::Uninitialized)
+            None => Err(LJMError::Uninitialized),
         }
     }
 
@@ -111,14 +113,12 @@ impl LJMWrapper {
 
         match library.get::<T>(name) {
             Ok(v) => Ok(v),
-            Err(e) => Err(e.into())
+            Err(e) => Err(e.into()),
         }
     }
 
     const fn dummy() -> Self {
-        Self {
-            library: None
-        }
+        Self { library: None }
     }
 
     pub fn is_initialised(&self) -> bool {
@@ -142,7 +142,9 @@ impl LJMWrapper {
             }
         };
 
-        Ok(LJMWrapper { library: Some(library) })
+        Ok(LJMWrapper {
+            library: Some(library),
+        })
     }
 
     /// Converts a MODBUS name to its address and type
@@ -151,9 +153,7 @@ impl LJMWrapper {
     #[doc(alias = "LJM_NameToAddress")]
     pub fn name_to_address(&self, identifier: String) -> Result<(i32, i32), LJMError> {
         let n_to_addr: Symbol<extern "C" fn(*const c_char, *mut i32, *mut i32) -> i32> =
-            unsafe {
-                self.get_c_function(b"LJM_NameToAddress")?
-            };
+            unsafe { self.get_c_function(b"LJM_NameToAddress")? };
 
         let name = CString::new(identifier).expect("CString conversion failed");
         let mut address: i32 = 0;
