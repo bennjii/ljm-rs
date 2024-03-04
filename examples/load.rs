@@ -24,7 +24,7 @@ fn load() {
     let now = Instant::now();
 
     let (addr, typ) = ljm_wrapper
-        .name_to_address("TEST_INT32".to_string())
+        .name_to_address("TEST_INT32")
         .expect("Expected NTA");
     println!("TEST_INT32 => Address: {}, Type: {}", addr, typ);
 
