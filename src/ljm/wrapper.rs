@@ -1,5 +1,6 @@
 use std::{
     ffi::{c_char, c_uint, CString},
+    fmt::Display,
     os::raw::c_double,
 };
 
@@ -151,7 +152,10 @@ impl LJMWrapper {
     /// Returns a tuple of (address, type) in (i32, i32) format.
     /// Verifiable with: - [LabJack Modbus Map](https://labjack.com/pages/support/?doc=/datasheets/t-series-datasheet/31-modbus-map-t-series-datasheet/)
     #[doc(alias = "LJM_NameToAddress")]
-    pub fn name_to_address(&self, identifier: &str) -> Result<(i32, i32), LJMError> {
+    pub fn name_to_address<T>(&self, identifier: T) -> Result<(i32, i32), LJMError>
+    where
+        T: ToString,
+    {
         let n_to_addr: Symbol<extern "C" fn(*const c_char, *mut i32, *mut i32) -> i32> =
             unsafe { self.get_c_function(b"LJM_NameToAddress")? };
 
@@ -320,13 +324,16 @@ impl LJMWrapper {
 
     /// Returns actual device scan rate (chosen by LabJack)
     #[doc(alias = "LJM_eStreamStart")]
-    pub fn stream_start(
+    pub fn stream_start<T>(
         &self,
         handle: i32,
         scans_per_read: i32,
         suggested_scan_rate: f64,
-        streams: Vec<String>,
-    ) -> Result<f64, LJMError> {
+        streams: Vec<T>,
+    ) -> Result<f64, LJMError>
+    where
+        T: ToString + Display,
+    {
         let stream_start: Symbol<extern "C" fn(i32, i32, i32, *const i32, *mut c_double) -> i32> =
             unsafe { self.get_c_function(b"LJM_eStreamStart")? };
 
