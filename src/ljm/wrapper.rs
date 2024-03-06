@@ -12,8 +12,20 @@ use crate::ljm::handle::{ConnectionType, DeviceHandleInfo, DeviceType};
 
 static LJM_DUMMY: LJMWrapper = LJMWrapper::dummy();
 
+#[derive(Clone)]
+struct LJMStream {
+    // Stores the scan rate
+    scan_rate: f64,
+
+    // Stores a list of the internal LJM addresses
+    scan_list: Vec<i32>,
+}
+
 pub struct LJMWrapper {
     pub library: Option<Library>,
+
+    #[cfg(feature = "stream")]
+    stream: Option<LJMStream>,
 }
 
 // We always return a dummy wrapper (uninitialized library)
@@ -56,6 +68,7 @@ pub enum LJMError {
     LibraryError(String),
     LibloadingError(libloading::Error),
     Uninitialized,
+    StreamNotStarted,
 }
 
 impl From<libloading::Error> for LJMError {
@@ -119,7 +132,10 @@ impl LJMWrapper {
     }
 
     const fn dummy() -> Self {
-        Self { library: None }
+        Self {
+            library: None,
+            stream: None,
+        }
     }
 
     pub fn is_initialised(&self) -> bool {
@@ -145,6 +161,7 @@ impl LJMWrapper {
 
         Ok(LJMWrapper {
             library: Some(library),
+            stream: None,
         })
     }
 
@@ -322,10 +339,11 @@ impl LJMWrapper {
         )
     }
 
+    /// Starts a LJM Stream, stopped with `stream_stop`.
     /// Returns actual device scan rate (chosen by LabJack)
     #[doc(alias = "LJM_eStreamStart")]
     pub fn stream_start<T>(
-        &self,
+        &mut self,
         handle: i32,
         scans_per_read: i32,
         suggested_scan_rate: f64,
@@ -357,6 +375,52 @@ impl LJMWrapper {
             &mut scan_rate,
         );
 
+        // If we don't have an error we will initialize the stream
+        if error_code == 0 {
+            self.stream = Some(LJMStream {
+                scan_list: addresses,
+                scan_rate,
+            });
+        }
+
         LJMWrapper::error_code(scan_rate, error_code)
+    }
+
+    /// Stops an LJM Stream started with `stream_start`
+    #[doc(alias = "LJM_eStreamStop")]
+    pub fn stream_stop(&self, handle: i32) -> Result<(), LJMError> {
+        let stream_stop: Symbol<extern "C" fn(i32) -> i32> =
+            unsafe { self.get_c_function(b"LJM_eStreamStop")? };
+
+        let error_code = stream_stop(handle);
+        LJMWrapper::error_code((), error_code)
+    }
+
+    /// Stops an LJM Stream started with `stream_start`
+    #[doc(alias = "LJM_eStreamRead")]
+    pub fn stream_read(&self, handle: i32) -> Result<(), LJMError> {
+        let stream_value = self
+            .stream
+            .clone()
+            .map_or(Err(LJMError::StreamNotStarted), |v| Ok(v))?;
+
+        let stream_stop: Symbol<extern "C" fn(i32, *mut f64, *mut i32, *mut i32) -> i32> =
+            unsafe { self.get_c_function(b"LJM_eStreamRead")? };
+
+        let mut dev_scan_backlog: i32 = 0;
+        let mut ljm_scan_backlog: i32 = 0;
+
+        // Length = ScansPerRead * NumberOfAddresses
+        let scan_length = stream_value.scan_rate * stream_value.scan_list.len() as f64;
+
+        let mut addr_slice = vec![0.0, scan_length];
+
+        let error_code = stream_stop(
+            handle,
+            addr_slice.as_mut_ptr(),
+            &mut dev_scan_backlog,
+            &mut ljm_scan_backlog,
+        );
+        LJMWrapper::error_code((), error_code)
     }
 }

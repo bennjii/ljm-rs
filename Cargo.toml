@@ -12,7 +12,8 @@ libloading = "0.8"
 serde = { version = "1.0.192", features = ["std", "derive"], optional = true }
 
 [features]
-default = []
+stream = []
+default = ["stream"]
 
 [lib]
 name = "ljmrs"
