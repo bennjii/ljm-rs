@@ -17,6 +17,9 @@ fn stream() {
 
     let streams = vec!["AIN0", "AIN1"];
 
+    // Do note that this examples will fail on
+    // DEMO mode labjacks, as currently stream mode
+    // is not supported for them.
     ljm_wrapper
         .stream_start(open_call, 1, 1000.0, streams)
         .expect("Failed to start stream");
