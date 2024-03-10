@@ -10,7 +10,7 @@ use serde::{Deserialize, Deserializer};
 
 use crate::{
     ljm::handle::{ConnectionType, DeviceHandleInfo, DeviceType},
-    LJMError, LJMErrorCode,
+    LJMError,
 };
 
 static LJM_DUMMY: LJMWrapper = LJMWrapper::dummy();

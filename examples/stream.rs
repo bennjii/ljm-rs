@@ -1,6 +1,6 @@
 extern crate ljmrs;
 
-use ljmrs::{LJMError, LJMWrapper};
+use ljmrs::LJMWrapper;
 
 fn stream() {
     let mut ljm_wrapper = unsafe { LJMWrapper::init(None) }.unwrap();
