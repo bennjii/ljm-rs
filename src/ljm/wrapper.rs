@@ -341,6 +341,9 @@ impl LJMWrapper {
 
     /// Starts a LJM Stream, stopped with `stream_stop`.
     /// Returns actual device scan rate (chosen by LabJack)
+    ///
+    /// `suggested_scan_rate` The scan rate forwarded to LJM which it will attempt to use
+    ///
     #[doc(alias = "LJM_eStreamStart")]
     #[cfg(feature = "stream")]
     pub fn stream_start<T>(
@@ -401,7 +404,7 @@ impl LJMWrapper {
     /// Stops an LJM Stream started with `stream_start`
     #[doc(alias = "LJM_eStreamRead")]
     #[cfg(feature = "stream")]
-    pub fn stream_read(&self, handle: i32) -> Result<(), LJMError> {
+    pub fn stream_read(&self, handle: i32) -> Result<Vec<f64>, LJMError> {
         let stream_value = self.stream.clone().ok_or(LJMError::StreamNotStarted)?;
 
         let stream_stop: Symbol<extern "C" fn(i32, *mut f64, *mut i32, *mut i32) -> i32> =
@@ -422,7 +425,7 @@ impl LJMWrapper {
             &mut ljm_scan_backlog,
         );
 
-        LJMWrapper::error_code((), error_code)
+        LJMWrapper::error_code(addr_slice, error_code)
     }
 
     #[cfg(feature = "stream")]
