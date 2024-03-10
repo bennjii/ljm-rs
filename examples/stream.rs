@@ -1,6 +1,6 @@
 extern crate ljmrs;
 
-use ljmrs::LJMWrapper;
+use ljmrs::{LJMError, LJMWrapper};
 
 fn stream() {
     let mut ljm_wrapper = unsafe { LJMWrapper::init(None) }.unwrap();
@@ -19,7 +19,7 @@ fn stream() {
 
     ljm_wrapper
         .stream_start(open_call, 1, 1000.0, streams)
-        .expect("Could not start stream");
+        .expect("Failed to start stream");
 
     assert!(ljm_wrapper.is_stream_active());
 

@@ -8,7 +8,10 @@ use libloading::{Library, Symbol};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Deserializer};
 
-use crate::ljm::handle::{ConnectionType, DeviceHandleInfo, DeviceType};
+use crate::{
+    ljm::handle::{ConnectionType, DeviceHandleInfo, DeviceType},
+    LJMError, LJMErrorCode,
+};
 
 static LJM_DUMMY: LJMWrapper = LJMWrapper::dummy();
 
@@ -41,57 +44,13 @@ impl<'de> Deserialize<'de> for LJMWrapper {
     }
 }
 
-/// Taken from: [LJM ErrorCodes](https://labjack.com/pages/support?doc=%2Fsoftware-driver%2Fljm-users-guide%2Ferror-codes%2F)
-///
-/// > Note:
-/// > We ignore the 0 value as NoError, as
-/// > we replace it with a rust Result type.
-#[derive(Debug)]
-pub enum LJMErrorCode {
-    LJMWarning(i32),
-    // 200-399
-    LJMModbusError(i32),
-    // 1200-1216
-    LJMLibraryError(i32), // 1220-1399
-
-    DeviceError(i32),
-    // 2000-2999
-    UserError(i32), // 3900-3999
-
-    Unknown(i32), // For any values outside these ranges.
-}
-
-#[derive(Debug)]
-pub enum LJMError {
-    StartupError(libloading::Error),
-    ErrorCode(LJMErrorCode),
-    LibraryError(String),
-    LibloadingError(libloading::Error),
-    Uninitialized,
-    StreamNotStarted,
-}
-
-impl From<libloading::Error> for LJMError {
-    fn from(value: libloading::Error) -> Self {
-        LJMError::LibloadingError(value)
-    }
-}
-
 impl LJMWrapper {
-    pub(crate) fn encode_error(error_code: i32) -> LJMErrorCode {
-        match error_code {
-            200..=399 => LJMErrorCode::LJMWarning(error_code - 200),
-            1200..=1216 => LJMErrorCode::LJMModbusError(error_code - 1200),
-            1220..=1399 => LJMErrorCode::LJMLibraryError(error_code - 1220),
-            2000..=2999 => LJMErrorCode::DeviceError(error_code - 2000),
-            3900..=3999 => LJMErrorCode::UserError(error_code - 3900),
-            _ => LJMErrorCode::Unknown(error_code),
-        }
-    }
-
-    pub(crate) fn error_code<T>(value: T, error_code: i32) -> Result<T, LJMError> {
+    pub(crate) fn error_code<T>(&self, value: T, error_code: i32) -> Result<T, LJMError> {
         if error_code != 0 {
-            return Err(LJMError::ErrorCode(LJMWrapper::encode_error(error_code)));
+            return Err(LJMError::ErrorCode(
+                error_code.into(),
+                self.error_to_string(error_code)?,
+            ));
         }
 
         Ok(value)
@@ -165,6 +124,26 @@ impl LJMWrapper {
         })
     }
 
+    #[doc(alias = "LJM_ErrorToString")]
+    pub fn error_to_string(&self, error_code: i32) -> Result<String, LJMError> {
+        let err_to_str: Symbol<extern "C" fn(i32, *mut c_char)> =
+            unsafe { self.get_c_function(b"LJM_ErrorToString")? };
+
+        let max_name_size = 256;
+        let buffer: Vec<u8> = Vec::with_capacity(max_name_size);
+
+        let error_buffer = CString::new(buffer).expect("CString conversion failed");
+        let raw_error_buffer = error_buffer.into_raw();
+
+        err_to_str(error_code, raw_error_buffer);
+
+        let retrieved_pointer = unsafe { CString::from_raw(raw_error_buffer) };
+
+        retrieved_pointer.into_string().map_err(|error| {
+            LJMError::LibraryError(format!("Unable to retrieve buffer pointer. {}", error))
+        })
+    }
+
     /// Converts a MODBUS name to its address and type
     /// Returns a tuple of (address, type) in (i32, i32) format.
     /// Verifiable with: - [LabJack Modbus Map](https://labjack.com/pages/support/?doc=/datasheets/t-series-datasheet/31-modbus-map-t-series-datasheet/)
@@ -182,7 +161,7 @@ impl LJMWrapper {
 
         let error_code = n_to_addr(name.as_ptr(), &mut address, &mut typ);
 
-        LJMWrapper::error_code((address, typ), error_code)
+        self.error_code((address, typ), error_code)
     }
 
     /// Digitally writes to address
@@ -203,7 +182,7 @@ impl LJMWrapper {
 
         let error_code = d_write_to_addr(handle, ntw.as_ptr(), vtw);
 
-        LJMWrapper::error_code((), error_code)
+        self.error_code((), error_code)
     }
 
     /// Reads from a labjack given the handle and name to read.
@@ -218,7 +197,7 @@ impl LJMWrapper {
 
         let error_code = d_read_from_aadr(handle, ntr.as_ptr(), &mut vtr);
 
-        LJMWrapper::error_code(vtr, error_code)
+        self.error_code(vtr, error_code)
     }
 
     /// Opens a LabJack and returns the handle id as an i32.
@@ -249,7 +228,7 @@ impl LJMWrapper {
             &mut handle_id,
         );
 
-        LJMWrapper::error_code(handle_id, error_code)
+        self.error_code(handle_id, error_code)
     }
 
     /// Closes a LabJack given it's handle id as an i32.
@@ -258,7 +237,7 @@ impl LJMWrapper {
         let close: Symbol<extern "C" fn(i32) -> i32> =
             unsafe { self.get_c_function(b"LJM_Close")? };
 
-        LJMWrapper::error_code(handle_id, close(handle_id))
+        self.error_code(handle_id, close(handle_id))
     }
 
     /// Closes all LabJacks connected.
@@ -267,7 +246,7 @@ impl LJMWrapper {
         let close_all: Symbol<extern "C" fn() -> i32> =
             unsafe { self.get_c_function(b"LJM_CloseAll")? };
 
-        LJMWrapper::error_code(handle_id, close_all())
+        self.error_code(handle_id, close_all())
     }
 
     /// Converts an IPV4 numerical representation, outputting the corresponding
@@ -299,7 +278,7 @@ impl LJMWrapper {
             LJMError::LibraryError(format!("Unable to retrieve IP pointer. {}", error))
         })?;
 
-        LJMWrapper::error_code(recovered_ip, error_code)
+        self.error_code(recovered_ip, error_code)
     }
 
     /// Informs regarding device connection type
@@ -326,7 +305,7 @@ impl LJMWrapper {
             &mut max_bytes_per_megabyte,
         );
 
-        LJMWrapper::error_code(
+        self.error_code(
             DeviceHandleInfo {
                 device_type: DeviceType::from(device_type),
                 connection_type: ConnectionType::from(connection_type),
@@ -387,7 +366,7 @@ impl LJMWrapper {
             });
         }
 
-        LJMWrapper::error_code(scan_rate, error_code)
+        self.error_code(scan_rate, error_code)
     }
 
     /// Stops an LJM Stream started with `stream_start`
@@ -398,7 +377,7 @@ impl LJMWrapper {
             unsafe { self.get_c_function(b"LJM_eStreamStop")? };
 
         let error_code = stream_stop(handle);
-        LJMWrapper::error_code((), error_code)
+        self.error_code((), error_code)
     }
 
     /// Stops an LJM Stream started with `stream_start`
@@ -425,7 +404,7 @@ impl LJMWrapper {
             &mut ljm_scan_backlog,
         );
 
-        LJMWrapper::error_code(addr_slice, error_code)
+        self.error_code(addr_slice, error_code)
     }
 
     #[cfg(feature = "stream")]
