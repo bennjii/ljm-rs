@@ -372,11 +372,13 @@ impl LJMWrapper {
     /// Stops an LJM Stream started with `stream_start`
     #[doc(alias = "LJM_eStreamStop")]
     #[cfg(feature = "stream")]
-    pub fn stream_stop(&self, handle: i32) -> Result<(), LJMError> {
+    pub fn stream_stop(&mut self, handle: i32) -> Result<(), LJMError> {
         let stream_stop: Symbol<extern "C" fn(i32) -> i32> =
             unsafe { self.get_c_function(b"LJM_eStreamStop")? };
 
         let error_code = stream_stop(handle);
+
+        self.stream = None;
         self.error_code((), error_code)
     }
 
