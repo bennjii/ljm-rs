@@ -21,8 +21,12 @@ fn stream() {
 
     let mut i = 0;
     while i < 50 {
-        ljm_wrapper.read_name(open_call, "AIN0".to_string()).expect("");
-        ljm_wrapper.read_name(open_call, "AIN1".to_string()).expect("");
+        ljm_wrapper
+            .read_name(open_call, "AIN0".to_string())
+            .expect("");
+        ljm_wrapper
+            .read_name(open_call, "AIN1".to_string())
+            .expect("");
 
         // thread::sleep(Duration::from_millis(1));
         i += 1;

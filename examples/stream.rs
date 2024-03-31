@@ -37,7 +37,7 @@ fn stream() {
             .expect("Could not read values");
 
         println!("Got {}: {:?}", read_value.len(), read_value);
-        
+
         // thread::sleep(Duration::from_millis(1));
         i += 1;
     }
