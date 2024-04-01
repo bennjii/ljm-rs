@@ -3,6 +3,7 @@ use std::{
     fmt::Display,
     os::raw::c_double,
 };
+use std::fmt::{Debug, Formatter};
 
 use libloading::{Library, Symbol};
 #[cfg(feature = "serde")]
@@ -31,14 +32,20 @@ pub struct LJMWrapper {
     stream: Option<LJMStream>,
 }
 
+impl Debug for LJMWrapper {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "LJMWrapper")
+    }
+}
+
 // We always return a dummy wrapper (uninitialized library)
 // When being deserialized, as there is no way to correctly serialize
 // The wrapper.
 #[cfg(feature = "serde")]
 impl<'de> Deserialize<'de> for LJMWrapper {
     fn deserialize<D>(_deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
+        where
+            D: Deserializer<'de>,
     {
         Ok(LJMWrapper::dummy())
     }
@@ -149,8 +156,8 @@ impl LJMWrapper {
     /// Verifiable with: - [LabJack Modbus Map](https://labjack.com/pages/support/?doc=/datasheets/t-series-datasheet/31-modbus-map-t-series-datasheet/)
     #[doc(alias = "LJM_NameToAddress")]
     pub fn name_to_address<T>(&self, identifier: T) -> Result<(i32, i32), LJMError>
-    where
-        T: ToString,
+        where
+            T: ToString,
     {
         let n_to_addr: Symbol<extern "C" fn(*const c_char, *mut i32, *mut i32) -> i32> =
             unsafe { self.get_c_function(b"LJM_NameToAddress")? };
@@ -332,8 +339,8 @@ impl LJMWrapper {
         suggested_scan_rate: f64,
         streams: Vec<T>,
     ) -> Result<f64, LJMError>
-    where
-        T: ToString + Display,
+        where
+            T: ToString + Display,
     {
         let stream_start: Symbol<extern "C" fn(i32, i32, i32, *const i32, *mut c_double) -> i32> =
             unsafe { self.get_c_function(b"LJM_eStreamStart")? };
