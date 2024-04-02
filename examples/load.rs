@@ -1,7 +1,8 @@
 extern crate ljmrs;
 
-use ljmrs::LJMWrapper;
 use std::time::Instant;
+
+use ljmrs::LJMWrapper;
 
 fn load() {
     let now = Instant::now();
@@ -23,10 +24,12 @@ fn load() {
 
     let now = Instant::now();
 
+    let name: &str = "FIO0";
+
     let (addr, typ) = ljm_wrapper
-        .name_to_address("TEST_INT32")
+        .name_to_address(name)
         .expect("Expected NTA");
-    println!("TEST_INT32 => Address: {}, Type: {}", addr, typ);
+    println!("{name} => Address: {}, Type: {}", addr, typ);
 
     let elapsed = now.elapsed();
     println!("Elapsed: {:.2?}", elapsed);
