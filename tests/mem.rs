@@ -13,6 +13,21 @@ fn assert_error(error: LJMError, error_code: i32) {
 }
 
 #[test]
+fn bad_open() {
+    let ljm_wrapper = unsafe { LJMWrapper::init(None) }.unwrap();
+
+    // Forge a fake handle
+    let handle: i32 = -1;
+    let result = ljm_wrapper.read_name(handle, "AIN0".to_string());
+
+    assert!(result.is_err());
+
+    let error: LJMError = result.err().unwrap();
+
+    assert_error(error, 1224);
+}
+
+#[test]
 fn fake_write() {
     let ljm_wrapper = unsafe { LJMWrapper::init(None) }.unwrap();
 
