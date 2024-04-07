@@ -5,12 +5,18 @@ use std::fmt::Debug;
 /// > Note:
 /// > We ignore the 0 value as NoError, as
 /// > we replace it with a rust Result type.
+#[derive(PartialOrd, PartialEq)]
 pub enum LJMErrorCode {
-    LJMWarning(i32),      // 200-399
-    LJMModbusError(i32),  // 1200-1216
-    LJMLibraryError(i32), // 1220-1399
-    DeviceError(i32),     // 2000-2999
-    UserError(i32),       // 3900-3999
+    LJMWarning(i32),
+    // 200-399
+    LJMModbusError(i32),
+    // 1200-1216
+    LJMLibraryError(i32),
+    // 1220-1399
+    DeviceError(i32),
+    // 2000-2999
+    UserError(i32),
+    // 3900-3999
     Unknown(i32),         // For any values outside these ranges.
 }
 
