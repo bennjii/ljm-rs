@@ -1,9 +1,9 @@
-use std::fmt::{Debug, Formatter};
 use std::{
     ffi::{c_char, c_uint, CString},
     fmt::Display,
     os::raw::c_double,
 };
+use std::fmt::{Debug, Formatter};
 
 use libloading::{Library, Symbol};
 #[cfg(feature = "serde")]
@@ -44,8 +44,8 @@ impl Debug for LJMWrapper {
 #[cfg(feature = "serde")]
 impl<'de> Deserialize<'de> for LJMWrapper {
     fn deserialize<D>(_deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
+        where
+            D: Deserializer<'de>,
     {
         Ok(LJMWrapper::dummy())
     }
@@ -54,8 +54,8 @@ impl<'de> Deserialize<'de> for LJMWrapper {
 #[cfg(feature = "serde")]
 impl<'de> Deserialize<'de> for &'static LJMWrapper {
     fn deserialize<D>(_deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
+        where
+            D: Deserializer<'de>,
     {
         Ok(&LJM_DUMMY)
     }
@@ -64,8 +64,8 @@ impl<'de> Deserialize<'de> for &'static LJMWrapper {
 #[cfg(feature = "serde")]
 impl Serialize for &'static LJMWrapper {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
+        where
+            S: Serializer,
     {
         serializer.serialize_unit()
     }
@@ -182,8 +182,8 @@ impl LJMWrapper {
     /// Verifiable with: - [LabJack Modbus Map](https://labjack.com/pages/support/?doc=/datasheets/t-series-datasheet/31-modbus-map-t-series-datasheet/)
     #[doc(alias = "LJM_NameToAddress")]
     pub fn name_to_address<T>(&self, identifier: T) -> Result<(i32, i32), LJMError>
-    where
-        T: ToString,
+        where
+            T: ToString,
     {
         let n_to_addr: Symbol<extern "C" fn(*const c_char, *mut i32, *mut i32) -> i32> =
             unsafe { self.get_c_function(b"LJM_NameToAddress")? };
@@ -365,8 +365,8 @@ impl LJMWrapper {
         suggested_scan_rate: f64,
         streams: Vec<T>,
     ) -> Result<f64, LJMError>
-    where
-        T: ToString + Display,
+        where
+            T: ToString + Display,
     {
         let stream_start: Symbol<extern "C" fn(i32, i32, i32, *const i32, *mut c_double) -> i32> =
             unsafe { self.get_c_function(b"LJM_eStreamStart")? };
@@ -428,9 +428,9 @@ impl LJMWrapper {
         let mut ljm_scan_backlog: i32 = 0;
 
         // Length = ScansPerRead * NumberOfAddresses
-        let scan_length = stream_value.scan_rate * stream_value.scan_list.len() as f64;
+        let scan_length = stream_value.scan_rate as usize * stream_value.scan_list.len();
 
-        let mut addr_slice = vec![0.0, scan_length];
+        let mut addr_slice = vec![0.0; scan_length];
 
         let error_code = stream_stop(
             handle,
