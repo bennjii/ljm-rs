@@ -1,13 +1,13 @@
+use std::fmt::{Debug, Formatter};
 use std::{
     ffi::{c_char, c_uint, CString},
     fmt::Display,
     os::raw::c_double,
 };
-use std::fmt::{Debug, Formatter};
 
 use libloading::{Library, Symbol};
 #[cfg(feature = "serde")]
-use serde::{Deserialize, Deserializer};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 use crate::{
     ljm::handle::{ConnectionType, DeviceHandleInfo, DeviceType},
@@ -44,10 +44,36 @@ impl Debug for LJMWrapper {
 #[cfg(feature = "serde")]
 impl<'de> Deserialize<'de> for LJMWrapper {
     fn deserialize<D>(_deserializer: D) -> Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
+    where
+        D: Deserializer<'de>,
     {
         Ok(LJMWrapper::dummy())
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de> Deserialize<'de> for &'static LJMWrapper {
+    fn deserialize<D>(_deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        Ok(&LJM_DUMMY)
+    }
+}
+
+#[cfg(feature = "serde")]
+impl Serialize for &'static LJMWrapper {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_unit()
+    }
+}
+
+impl Default for &'static LJMWrapper {
+    fn default() -> Self {
+        &LJM_DUMMY
     }
 }
 
@@ -156,8 +182,8 @@ impl LJMWrapper {
     /// Verifiable with: - [LabJack Modbus Map](https://labjack.com/pages/support/?doc=/datasheets/t-series-datasheet/31-modbus-map-t-series-datasheet/)
     #[doc(alias = "LJM_NameToAddress")]
     pub fn name_to_address<T>(&self, identifier: T) -> Result<(i32, i32), LJMError>
-        where
-            T: ToString,
+    where
+        T: ToString,
     {
         let n_to_addr: Symbol<extern "C" fn(*const c_char, *mut i32, *mut i32) -> i32> =
             unsafe { self.get_c_function(b"LJM_NameToAddress")? };
@@ -339,8 +365,8 @@ impl LJMWrapper {
         suggested_scan_rate: f64,
         streams: Vec<T>,
     ) -> Result<f64, LJMError>
-        where
-            T: ToString + Display,
+    where
+        T: ToString + Display,
     {
         let stream_start: Symbol<extern "C" fn(i32, i32, i32, *const i32, *mut c_double) -> i32> =
             unsafe { self.get_c_function(b"LJM_eStreamStart")? };
@@ -416,8 +442,55 @@ impl LJMWrapper {
         self.error_code(addr_slice, error_code)
     }
 
+    // /// Handles the LJM callback for a stream
+    // #[doc(alias = "LJM_StreamSetCallback")]
+    // #[cfg(feature = "stream")]
+    // pub fn stream_set_callback(
+    //     &self,
+    //     handle_id: i32,
+    //     function: extern "C" fn(*mut i32),
+    // ) -> Result<Vec<f64>, LJMError> {
+    //     let stream_value = self.stream.clone().ok_or(LJMError::StreamNotStarted)?;
+
+    //     let stream_stop: Symbol<extern "C" fn(i32, *mut f64, *mut i32, *mut i32) -> i32> =
+    //         unsafe { self.get_c_function(b"LJM_SetStreamCallback")? };
+
+    //     // ...
+    //     Ok(vec![])
+    // }
+
     #[cfg(feature = "stream")]
     pub fn is_stream_active(&self) -> bool {
         self.stream.is_some()
+    }
+
+    /// Digitally writes an integer config
+    /// Does not return a value
+    #[doc(alias = "LJM_WriteLibraryConfigS")]
+    pub fn set_config(&self, config_name: String, config_value: u32) -> Result<(), LJMError> {
+        let d_write_to_addr: Symbol<extern "C" fn(*const c_char, c_double) -> i32> =
+            unsafe { self.get_c_function(b"LJM_WriteLibraryConfigS")? };
+
+        let ntw = CString::new(config_name).expect("CString conversion failed");
+        let vtw = c_double::from(config_value);
+
+        let error_code = d_write_to_addr(ntw.as_ptr(), vtw);
+
+        self.error_code((), error_code)
+    }
+
+    /// Reads from a labjack given the handle and name to read.
+    /// Returns an f64 value that is rxead from the labjack.
+    #[doc(alias = "LJM_ReadLibraryConfigS")]
+    pub fn get_config(&self, config_name: String) -> Result<f64, LJMError> {
+        let d_read_library_config: Symbol<extern "C" fn(*const c_char, *mut c_double) -> i32> =
+            unsafe { self.get_c_function(b"LJM_ReadLibraryConfigS")? };
+
+        let ntr = CString::new(config_name).expect("CString conversion failed");
+        let mut vtr = c_double::from(-1);
+
+        let error_code = d_read_library_config(ntr.as_ptr(), &mut vtr);
+
+        self.error_code(vtr, error_code)
     }
 }

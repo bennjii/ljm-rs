@@ -1,12 +1,8 @@
 extern crate ljmrs;
 
-use std::time::Instant;
-
 use ljmrs::LJMWrapper;
 
 fn read() {
-    let now = Instant::now();
-
     let ljm_wrapper = unsafe { LJMWrapper::init(None) }.unwrap();
 
     let open_call = ljm_wrapper
@@ -19,32 +15,23 @@ fn read() {
 
     println!("Opened LabJack, got handle: {}", open_call);
 
-    let elapsed = now.elapsed();
-    println!("Elapsed: {:.2?}", elapsed);
-
-    let now = Instant::now();
-
     let read_value = ljm_wrapper
-        .read_name(open_call, "TEST_INT32".to_string())
+        .get_config("LJM_STREAM_SCANS_RETURN".to_string())
         .expect("Expected Value");
-    println!("Got: {}", read_value);
 
-    let elapsed = now.elapsed();
-    println!("Elapsed: {:.2?}", elapsed);
+    println!("Got configuration value: {}", read_value);
 
     ljm_wrapper
-        .write_name(open_call, "TEST_INT32".to_string(), 15)
+        .set_config("LJM_STREAM_SCANS_RETURN".to_string(), 2)
         .expect("Expected Value");
 
-    let now = Instant::now();
+    println!("Set config value to 2, reading...");
 
     let read_value = ljm_wrapper
-        .read_name(open_call, "TEST_INT32".to_string())
+        .get_config("LJM_STREAM_SCANS_RETURN".to_string())
         .expect("Expected Value");
-    println!("Got: {}", read_value);
 
-    let elapsed = now.elapsed();
-    println!("Elapsed: {:.2?}", elapsed);
+    println!("Got new configuration value: {}", read_value);
 }
 
 fn main() {
