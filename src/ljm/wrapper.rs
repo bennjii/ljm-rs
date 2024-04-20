@@ -442,23 +442,6 @@ impl LJMWrapper {
         self.error_code(addr_slice, error_code)
     }
 
-    // /// Handles the LJM callback for a stream
-    // #[doc(alias = "LJM_StreamSetCallback")]
-    // #[cfg(feature = "stream")]
-    // pub fn stream_set_callback(
-    //     &self,
-    //     handle_id: i32,
-    //     function: extern "C" fn(*mut i32),
-    // ) -> Result<Vec<f64>, LJMError> {
-    //     let stream_value = self.stream.clone().ok_or(LJMError::StreamNotStarted)?;
-
-    //     let stream_stop: Symbol<extern "C" fn(i32, *mut f64, *mut i32, *mut i32) -> i32> =
-    //         unsafe { self.get_c_function(b"LJM_SetStreamCallback")? };
-
-    //     // ...
-    //     Ok(vec![])
-    // }
-
     #[cfg(feature = "stream")]
     pub fn is_stream_active(&self) -> bool {
         self.stream.is_some()
