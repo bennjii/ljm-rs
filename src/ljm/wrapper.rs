@@ -4,6 +4,7 @@ use std::{
     os::raw::c_double,
 };
 use std::fmt::{Debug, Formatter};
+use std::sync::RwLock;
 
 use libloading::{Library, Symbol};
 #[cfg(feature = "serde")]
@@ -29,7 +30,7 @@ pub struct LJMWrapper {
     pub library: Option<Library>,
 
     #[cfg(feature = "stream")]
-    stream: Option<LJMStream>,
+    stream: RwLock<Option<LJMStream>>,
 }
 
 impl Debug for LJMWrapper {
@@ -126,7 +127,7 @@ impl LJMWrapper {
     const fn dummy() -> Self {
         Self {
             library: None,
-            stream: None,
+            stream: RwLock::new(None),
         }
     }
 
@@ -153,7 +154,7 @@ impl LJMWrapper {
 
         Ok(LJMWrapper {
             library: Some(library),
-            stream: None,
+            stream: RwLock::new(None),
         })
     }
 
@@ -359,7 +360,7 @@ impl LJMWrapper {
     #[doc(alias = "LJM_eStreamStart")]
     #[cfg(feature = "stream")]
     pub fn stream_start<T>(
-        &mut self,
+        &self,
         handle: i32,
         scans_per_read: i32,
         suggested_scan_rate: f64,
@@ -393,7 +394,8 @@ impl LJMWrapper {
 
         // If we don't have an error we will initialize the stream
         if error_code == 0 {
-            self.stream = Some(LJMStream {
+            let mut stream = self.stream.write().unwrap();
+            stream.replace(LJMStream {
                 scan_list: addresses,
                 scan_rate,
             });
@@ -405,13 +407,13 @@ impl LJMWrapper {
     /// Stops an LJM Stream started with `stream_start`
     #[doc(alias = "LJM_eStreamStop")]
     #[cfg(feature = "stream")]
-    pub fn stream_stop(&mut self, handle: i32) -> Result<(), LJMError> {
+    pub fn stream_stop(&self, handle: i32) -> Result<(), LJMError> {
         let stream_stop: Symbol<extern "C" fn(i32) -> i32> =
             unsafe { self.get_c_function(b"LJM_eStreamStop")? };
 
         let error_code = stream_stop(handle);
 
-        self.stream = None;
+        let _ = self.stream.write().map_err(|e| LJMError::LibraryError(e.to_string()))?.take();
         self.error_code((), error_code)
     }
 
@@ -419,7 +421,7 @@ impl LJMWrapper {
     #[doc(alias = "LJM_eStreamRead")]
     #[cfg(feature = "stream")]
     pub fn stream_read(&self, handle: i32) -> Result<Vec<f64>, LJMError> {
-        let stream_value = self.stream.clone().ok_or(LJMError::StreamNotStarted)?;
+        let stream_value = self.stream.read().unwrap().clone().ok_or(LJMError::StreamNotStarted)?;
 
         let stream_stop: Symbol<extern "C" fn(i32, *mut f64, *mut i32, *mut i32) -> i32> =
             unsafe { self.get_c_function(b"LJM_eStreamRead")? };
@@ -440,11 +442,6 @@ impl LJMWrapper {
         );
 
         self.error_code(addr_slice, error_code)
-    }
-
-    #[cfg(feature = "stream")]
-    pub fn is_stream_active(&self) -> bool {
-        self.stream.is_some()
     }
 
     /// Digitally writes an integer config
