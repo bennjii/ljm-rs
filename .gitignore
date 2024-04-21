@@ -3,3 +3,5 @@
 ./*.sh
 ./build.sh
 ./load.sh
+/build.sh
+/load.sh
