@@ -5,7 +5,7 @@ use std::time::Instant;
 use ljmrs::LJMWrapper;
 
 fn stream() {
-    let mut ljm_wrapper = unsafe { LJMWrapper::init(None) }.unwrap();
+    let ljm_wrapper = unsafe { LJMWrapper::init(None) }.unwrap();
 
     let open_call = ljm_wrapper
         .open_jack(
@@ -28,7 +28,6 @@ fn stream() {
             .read_name(open_call, "AIN1".to_string())
             .expect("");
 
-        // thread::sleep(Duration::from_millis(1));
         i += 1;
     }
 
