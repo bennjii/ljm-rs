@@ -4,37 +4,37 @@ use std::time::Instant;
 
 use ljmrs::LJMWrapper;
 
-fn load() {
-    let now = Instant::now();
-
+fn stream() {
     let ljm_wrapper = unsafe { LJMWrapper::init(None) }.unwrap();
 
     let open_call = ljm_wrapper
         .open_jack(
             ljmrs::DeviceType::ANY,
             ljmrs::ConnectionType::ANY,
-            "-2".to_string(),
+            "ANY".to_string(),
         )
         .expect("Could not open DEMO LabJack");
 
     println!("Opened LabJack, got handle: {}", open_call);
 
-    let elapsed = now.elapsed();
-    println!("Elapsed: {:.2?}", elapsed);
-
     let now = Instant::now();
 
-    let name: &str = "FIO0";
+    let mut i = 0;
+    while i < 50 {
+        ljm_wrapper
+            .read_name(open_call, "AIN0".to_string())
+            .expect("");
+        ljm_wrapper
+            .read_name(open_call, "AIN1".to_string())
+            .expect("");
 
-    let (addr, typ) = ljm_wrapper
-        .name_to_address(name)
-        .expect("Expected NTA");
-    println!("{name} => Address: {}, Type: {}", addr, typ);
+        i += 1;
+    }
 
     let elapsed = now.elapsed();
     println!("Elapsed: {:.2?}", elapsed);
 }
 
 fn main() {
-    load();
+    stream();
 }

@@ -4,7 +4,7 @@ use std::time::Instant;
 
 use ljmrs::LJMWrapper;
 
-fn load() {
+fn read() {
     let now = Instant::now();
 
     let ljm_wrapper = unsafe { LJMWrapper::init(None) }.unwrap();
@@ -24,17 +24,29 @@ fn load() {
 
     let now = Instant::now();
 
-    let name: &str = "FIO0";
+    let read_value = ljm_wrapper
+        .read_name(open_call, "TEST_INT32".to_string())
+        .expect("Expected Value");
+    println!("Got: {}", read_value);
 
-    let (addr, typ) = ljm_wrapper
-        .name_to_address(name)
-        .expect("Expected NTA");
-    println!("{name} => Address: {}, Type: {}", addr, typ);
+    let elapsed = now.elapsed();
+    println!("Elapsed: {:.2?}", elapsed);
+
+    ljm_wrapper
+        .write_name(open_call, "TEST_INT32".to_string(), 15)
+        .expect("Expected Value");
+
+    let now = Instant::now();
+
+    let read_value = ljm_wrapper
+        .read_name(open_call, "TEST_INT32".to_string())
+        .expect("Expected Value");
+    println!("Got: {}", read_value);
 
     let elapsed = now.elapsed();
     println!("Elapsed: {:.2?}", elapsed);
 }
 
 fn main() {
-    load();
+    read();
 }

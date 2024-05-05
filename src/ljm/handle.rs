@@ -58,13 +58,10 @@ pub struct DeviceHandleInfo {
 
 impl Display for DeviceHandleInfo {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        // DT on CT @ ...B/MB
-        // 000.000.000:0000
-        // SERIAL_NUMBER
-
+        // DT on CT @ ...B/MB 000.000.000:0000 => SERIAL_NUMBER
         write!(
             f,
-            "{} on {} @ {}B/MB\n{}:{} => {}",
+            "{} on {} @ {}B/MB {}:{} => {}",
             self.device_type,
             self.connection_type,
             self.max_bytes_per_megabyte,
@@ -102,7 +99,7 @@ impl Display for ConnectionType {
             ConnectionType::ETHERNET => "ETHERNET",
             ConnectionType::ANY | ConnectionType::UNKNOWN(_) => "ANY",
         }
-        .to_string();
+            .to_string();
         write!(f, "{}", str)
     }
 }
