@@ -45,8 +45,8 @@ impl Debug for LJMWrapper {
 #[cfg(feature = "serde")]
 impl<'de> Deserialize<'de> for LJMWrapper {
     fn deserialize<D>(_deserializer: D) -> Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
+    where
+        D: Deserializer<'de>,
     {
         Ok(LJMWrapper::dummy())
     }
@@ -55,8 +55,8 @@ impl<'de> Deserialize<'de> for LJMWrapper {
 #[cfg(feature = "serde")]
 impl<'de> Deserialize<'de> for &'static LJMWrapper {
     fn deserialize<D>(_deserializer: D) -> Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
+    where
+        D: Deserializer<'de>,
     {
         Ok(&LJM_DUMMY)
     }
@@ -65,8 +65,8 @@ impl<'de> Deserialize<'de> for &'static LJMWrapper {
 #[cfg(feature = "serde")]
 impl Serialize for &'static LJMWrapper {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where
-            S: Serializer,
+    where
+        S: Serializer,
     {
         serializer.serialize_unit()
     }
@@ -83,6 +83,8 @@ impl LJMWrapper {
         if error_code != 0 {
             return Err(LJMError::ErrorCode(
                 error_code.into(),
+                // TODO: Check-Crit.
+                // "NOT_HELPFUL".to_string(),
                 self.error_to_string(error_code)?,
             ));
         }
@@ -160,22 +162,20 @@ impl LJMWrapper {
 
     #[doc(alias = "LJM_ErrorToString")]
     pub fn error_to_string(&self, error_code: i32) -> Result<String, LJMError> {
-        let err_to_str: Symbol<extern "C" fn(i32, *mut c_char)> =
+        let err_to_str: Symbol<extern "C" fn(i32, *mut u8)> =
             unsafe { self.get_c_function(b"LJM_ErrorToString")? };
 
-        let max_name_size = 256;
-        let buffer: Vec<u8> = Vec::with_capacity(max_name_size);
+        // Allocate using stack. LJM States will not overflow.
+        // https://support.labjack.com/docs/errortostring-ljm-user-s-guide#ErrorToString
+        let mut buffer: [u8; 256] = [0; 256];
+        err_to_str(error_code, buffer.as_mut_ptr());
 
-        let error_buffer = CString::new(buffer).expect("CString conversion failed");
-        let raw_error_buffer = error_buffer.into_raw();
-
-        err_to_str(error_code, raw_error_buffer);
-
-        let retrieved_pointer = unsafe { CString::from_raw(raw_error_buffer) };
-
-        retrieved_pointer.into_string().map_err(|error| {
-            LJMError::LibraryError(format!("Unable to retrieve buffer pointer. {}", error))
-        })
+        match std::str::from_utf8(buffer.as_slice()) {
+            Ok(v) => Ok(v.to_string()),
+            Err(e) => {
+                Err(LJMError::LibraryError(format!("Unable to retrieve buffer pointer. {}", e)))
+            }
+        }
     }
 
     /// Converts a MODBUS name to its address and type
@@ -183,8 +183,8 @@ impl LJMWrapper {
     /// Verifiable with: - [LabJack Modbus Map](https://labjack.com/pages/support/?doc=/datasheets/t-series-datasheet/31-modbus-map-t-series-datasheet/)
     #[doc(alias = "LJM_NameToAddress")]
     pub fn name_to_address<T>(&self, identifier: T) -> Result<(i32, i32), LJMError>
-        where
-            T: ToString,
+    where
+        T: ToString,
     {
         let n_to_addr: Symbol<extern "C" fn(*const c_char, *mut i32, *mut i32) -> i32> =
             unsafe { self.get_c_function(b"LJM_NameToAddress")? };
@@ -366,8 +366,8 @@ impl LJMWrapper {
         suggested_scan_rate: f64,
         streams: Vec<T>,
     ) -> Result<f64, LJMError>
-        where
-            T: ToString + Display,
+    where
+        T: ToString + Display,
     {
         let stream_start: Symbol<extern "C" fn(i32, i32, i32, *const i32, *mut c_double) -> i32> =
             unsafe { self.get_c_function(b"LJM_eStreamStart")? };
