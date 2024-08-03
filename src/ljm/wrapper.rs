@@ -552,12 +552,12 @@ impl LJMWrapper {
     }
 
     #[cfg(feature = "lua")]
-    pub fn lua_running(&self, handle: i32) -> Result<bool, LJMError> {
+    pub fn module_running(&self, handle: i32) -> Result<bool, LJMError> {
         Ok(self.read_name(handle, "LUA_RUN")? == 1_f64)
     }
 
     #[cfg(all(feature = "lua", feature = "tokio"))]
-    pub async fn stop_lua(&self, handle: i32) -> Result<(), LJMError> {
+    pub async fn stop_module(&self, handle: i32) -> Result<(), LJMError> {
         let mut interval = tokio::time::interval(tokio::time::Duration::from_millis(50));
 
         while self.lua_running(handle)? {
@@ -569,7 +569,7 @@ impl LJMWrapper {
     }
 
     #[cfg(all(feature = "lua", not(feature = "tokio")))]
-    pub fn stop_lua(&self, handle: i32) -> Result<(), LJMError> {
+    pub fn stop_module(&self, handle: i32) -> Result<(), LJMError> {
         while self.lua_running(handle)? {
             self.write_name(handle, "LUA_RUN", 0)?;
             std::thread::sleep(std::time::Duration::from_millis(50))

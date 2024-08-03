@@ -3,8 +3,14 @@ pub struct LuaModule {
     script: String,
 }
 
+impl Into<LuaModule> for String {
+    fn into(self) -> LuaModule {
+        LuaModule::new(self)
+    }
+}
+
 impl LuaModule {
-    pub fn new(module: &str) -> Self {
+    pub fn new<T: Into<String>>(module: T) -> Self {
         LuaModule {
             script: module.to_string()
         }
