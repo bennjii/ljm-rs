@@ -1,7 +1,8 @@
 extern crate ljmrs;
 
-use ljmrs::LJMWrapper;
 use std::time::Instant;
+
+use ljmrs::LJMWrapper;
 
 fn read() {
     let now = Instant::now();
@@ -24,7 +25,7 @@ fn read() {
     let now = Instant::now();
 
     let read_value = ljm_wrapper
-        .read_name(open_call, "TEST_INT32".to_string())
+        .read_name(open_call, "TEST_INT32")
         .expect("Expected Value");
     println!("Got: {}", read_value);
 
@@ -32,13 +33,13 @@ fn read() {
     println!("Elapsed: {:.2?}", elapsed);
 
     ljm_wrapper
-        .write_name(open_call, "TEST_INT32".to_string(), 15)
+        .write_name(open_call, "TEST_INT32", 15)
         .expect("Expected Value");
 
     let now = Instant::now();
 
     let read_value = ljm_wrapper
-        .read_name(open_call, "TEST_INT32".to_string())
+        .read_name(open_call, "TEST_INT32")
         .expect("Expected Value");
     println!("Got: {}", read_value);
 

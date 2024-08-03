@@ -211,10 +211,10 @@ impl LJMWrapper {
     /// Takes a handle to the labjack, the name to be written and the value to be written.
     /// Does not return a value.
     #[doc(alias = "LJM_eWriteName")]
-    pub fn write_name(
+    pub fn write_name<T: Into<Vec<u8>>>(
         &self,
         handle: i32,
-        name_to_write: &str,
+        name_to_write: T,
         value_to_write: u32,
     ) -> Result<(), LJMError> {
         let d_write_to_addr: Symbol<extern "C" fn(i32, *const c_char, c_double) -> i32> =
@@ -229,12 +229,12 @@ impl LJMWrapper {
     }
 
     #[doc(alias = "LJM_eWriteNameByteArray")]
-    pub fn write_name_byte_array<T: Into<Vec<u8>>>(
+    pub fn write_name_byte_array<T: Into<Vec<u8>>, B: Into<Vec<u8>>>(
         &self,
         handle: i32,
-        name_to_write: &str,
+        name_to_write: T,
         size: i32,
-        bytes: T,
+        bytes: B,
     ) -> Result<(), LJMError> {
         let d_write_name_byte_array: Symbol<extern "C" fn(i32, *const c_char, i32, *const c_char, *mut i32) -> i32> =
             unsafe { self.get_c_function(b"LJM_eWriteNameByteArray")? };
@@ -259,7 +259,7 @@ impl LJMWrapper {
     /// Reads from a labjack given the handle and name to read.
     /// Returns an f64 value that is read from the labjack.
     #[doc(alias = "LJM_eReadName")]
-    pub fn read_name(&self, handle: i32, name_to_read: &str) -> Result<f64, LJMError> {
+    pub fn read_name<T: Into<Vec<u8>>>(&self, handle: i32, name_to_read: T) -> Result<f64, LJMError> {
         let d_read_from_aadr: Symbol<extern "C" fn(i32, *const c_char, *mut c_double) -> i32> =
             unsafe { self.get_c_function(b"LJM_eReadName")? };
 

@@ -14,7 +14,7 @@ tokio = { version = "1.32.0", features = ["time", "rt-multi-thread", "macros"], 
 stream = []
 lua = []
 tokio = ["dep:tokio"]
-default = ["stream", "lua"]
+default = ["stream"]
 
 [lib]
 name = "ljmrs"
