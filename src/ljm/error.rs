@@ -1,5 +1,7 @@
 use std::fmt::Debug;
 
+use crate::LJMWrapper;
+
 /// Taken from: [LJM ErrorCodes](https://labjack.com/pages/support?doc=%2Fsoftware-driver%2Fljm-users-guide%2Ferror-codes%2F)
 ///
 /// > Note:
@@ -64,6 +66,7 @@ impl Debug for LJMErrorCode {
 }
 
 pub enum LJMError {
+    WrapperInvalid(LJMWrapper),
     StartupError(libloading::Error),
     ErrorCode(LJMErrorCode, String),
     LibraryError(String),
@@ -93,7 +96,8 @@ impl Debug for LJMError {
                 LJMError::Uninitialized => "UninitializedError".to_string(),
                 LJMError::StreamNotStarted => "StreamNotStartedError".to_string(),
                 LJMError::ScriptStillRunning => "ScriptStillRunningError".to_string(),
-                LJMError::ScriptNotSet => "ScriptNotSetError".to_string()
+                LJMError::ScriptNotSet => "ScriptNotSetError".to_string(),
+                LJMError::WrapperInvalid(_) => "WrapperInvalidError".to_string()
             }
         )
     }

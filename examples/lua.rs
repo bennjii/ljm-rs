@@ -31,37 +31,34 @@ while true do
 end
 "#;
 
-fn init() -> (i32, LJMWrapper) {
-    let ljm_wrapper = unsafe { LJMWrapper::init(None) }.unwrap();
+fn init() -> i32 {
+    unsafe { LJMWrapper::init(None) }.unwrap();
 
-    (ljm_wrapper
-         .open_jack(
-             ljmrs::DeviceType::ANY,
-             ljmrs::ConnectionType::ANY,
-             "-2".to_string(),
-         )
-         .expect("Could not open DEMO LabJack"), ljm_wrapper)
+    LJMWrapper::open_jack(
+        ljmrs::DeviceType::ANY,
+        ljmrs::ConnectionType::ANY,
+        "-2".to_string(),
+    ).expect("Could not open DEMO LabJack")
 }
 
 #[cfg(feature = "tokio")]
 #[tokio::main]
 async fn main() {
-    let (open_call, ljm_wrapper) = init();
+    let open_call = init();
 
     let module = LuaModule::new(SCRIPT);
     println!("Setting LUA module of size: {}", module.size());
 
-    ljm_wrapper.set_module(open_call, module).await.unwrap();
+    LJMWrapper::set_module(open_call, module).await.unwrap();
     println!("Module set!");
 }
 
 #[cfg(not(feature = "tokio"))]
 fn main() {
-    let (open_call, ljm_wrapper) = init();
-
+    let open_call = init();
     let module = LuaModule::new(SCRIPT);
     println!("Setting LUA module of size: {}", module.size());
 
-    ljm_wrapper.set_module(open_call, module).unwrap();
+    LJMWrapper::set_module(open_call, module).unwrap();
     println!("Module set!");
 }

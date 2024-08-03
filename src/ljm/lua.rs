@@ -10,7 +10,7 @@ impl Into<LuaModule> for String {
 }
 
 impl LuaModule {
-    pub fn new<T: Into<String>>(module: T) -> Self {
+    pub fn new<T: ToString>(module: T) -> Self {
         LuaModule {
             script: module.to_string()
         }

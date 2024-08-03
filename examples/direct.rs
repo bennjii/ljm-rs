@@ -5,30 +5,21 @@ use std::time::Instant;
 use ljmrs::LJMWrapper;
 
 fn stream() {
-    let ljm_wrapper = unsafe { LJMWrapper::init(None) }.unwrap();
+    unsafe { LJMWrapper::init(None) }.unwrap();
 
-    let open_call = ljm_wrapper
-        .open_jack(
-            ljmrs::DeviceType::ANY,
-            ljmrs::ConnectionType::ANY,
-            "ANY".to_string(),
-        )
-        .expect("Could not open DEMO LabJack");
+    let open_call = LJMWrapper::open_jack(
+        ljmrs::DeviceType::ANY,
+        ljmrs::ConnectionType::ANY,
+        "-2".to_string(), // Use "ANY" for physical hardware
+    ).expect("Could not open DEMO LabJack");
 
     println!("Opened LabJack, got handle: {}", open_call);
 
     let now = Instant::now();
 
-    let mut i = 0;
-    while i < 50 {
-        ljm_wrapper
-            .read_name(open_call, "AIN0")
-            .expect("");
-        ljm_wrapper
-            .read_name(open_call, "AIN1")
-            .expect("");
-
-        i += 1;
+    for _ in 0..50 {
+        LJMWrapper::read_name(open_call, "AIN0").expect("");
+        LJMWrapper::read_name(open_call, "AIN1").expect("");
     }
 
     let elapsed = now.elapsed();
