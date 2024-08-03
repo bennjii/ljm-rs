@@ -70,6 +70,8 @@ pub enum LJMError {
     LibloadingError(libloading::Error),
     Uninitialized,
     StreamNotStarted,
+    ScriptNotSet,
+    ScriptStillRunning,
 }
 
 impl From<libloading::Error> for LJMError {
@@ -90,6 +92,8 @@ impl Debug for LJMError {
                 LJMError::LibraryError(error) => format!("LibraryError::{:?}", error),
                 LJMError::Uninitialized => "UninitializedError".to_string(),
                 LJMError::StreamNotStarted => "StreamNotStartedError".to_string(),
+                LJMError::ScriptStillRunning => "ScriptStillRunningError".to_string(),
+                LJMError::ScriptNotSet => "ScriptNotSetError".to_string()
             }
         )
     }

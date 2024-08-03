@@ -14,6 +14,7 @@ use crate::{
     ljm::handle::{ConnectionType, DeviceHandleInfo, DeviceType},
     LJMError,
 };
+use crate::lua::LuaModule;
 
 static LJM_DUMMY: LJMWrapper = LJMWrapper::dummy();
 
@@ -31,6 +32,10 @@ pub struct LJMWrapper {
 
     #[cfg(feature = "stream")]
     stream: RwLock<Option<LJMStream>>,
+
+    // A device can only have one module at a time.
+    #[cfg(feature = "lua")]
+    module: RwLock<Option<LuaModule>>,
 }
 
 impl Debug for LJMWrapper {
@@ -83,8 +88,6 @@ impl LJMWrapper {
         if error_code != 0 {
             return Err(LJMError::ErrorCode(
                 error_code.into(),
-                // TODO: Check-Crit.
-                // "NOT_HELPFUL".to_string(),
                 self.error_to_string(error_code)?,
             ));
         }
@@ -129,7 +132,10 @@ impl LJMWrapper {
     const fn dummy() -> Self {
         Self {
             library: None,
+            #[cfg(feature = "stream")]
             stream: RwLock::new(None),
+            #[cfg(feature = "lua")]
+            module: RwLock::new(None),
         }
     }
 
@@ -156,7 +162,10 @@ impl LJMWrapper {
 
         Ok(LJMWrapper {
             library: Some(library),
+            #[cfg(feature = "stream")]
             stream: RwLock::new(None),
+            #[cfg(feature = "lua")]
+            module: RwLock::new(None),
         })
     }
 
@@ -205,7 +214,7 @@ impl LJMWrapper {
     pub fn write_name(
         &self,
         handle: i32,
-        name_to_write: String,
+        name_to_write: &str,
         value_to_write: u32,
     ) -> Result<(), LJMError> {
         let d_write_to_addr: Symbol<extern "C" fn(i32, *const c_char, c_double) -> i32> =
@@ -219,10 +228,38 @@ impl LJMWrapper {
         self.error_code((), error_code)
     }
 
+    #[doc(alias = "LJM_eWriteNameByteArray")]
+    pub fn write_name_byte_array<T: Into<Vec<u8>>>(
+        &self,
+        handle: i32,
+        name_to_write: &str,
+        size: i32,
+        bytes: T,
+    ) -> Result<(), LJMError> {
+        let d_write_name_byte_array: Symbol<extern "C" fn(i32, *const c_char, i32, *const c_char, *mut i32) -> i32> =
+            unsafe { self.get_c_function(b"LJM_eWriteNameByteArray")? };
+
+        let btw = CString::new(bytes) // Bytes-To-Write
+            .expect("CString conversion failed");
+        let ntw = CString::new(name_to_write) // Name-To-Write
+            .expect("CString conversion failed");
+
+        let mut error_addr: i32 = 0;
+        let error_code = d_write_name_byte_array(
+            handle,
+            ntw.as_ptr(),
+            size,
+            btw.as_ptr(),
+            &mut error_addr,
+        );
+
+        self.error_code((), error_code)
+    }
+
     /// Reads from a labjack given the handle and name to read.
     /// Returns an f64 value that is read from the labjack.
     #[doc(alias = "LJM_eReadName")]
-    pub fn read_name(&self, handle: i32, name_to_read: String) -> Result<f64, LJMError> {
+    pub fn read_name(&self, handle: i32, name_to_read: &str) -> Result<f64, LJMError> {
         let d_read_from_aadr: Symbol<extern "C" fn(i32, *const c_char, *mut c_double) -> i32> =
             unsafe { self.get_c_function(b"LJM_eReadName")? };
 
@@ -423,7 +460,7 @@ impl LJMWrapper {
     pub fn stream_read(&self, handle: i32) -> Result<Vec<f64>, LJMError> {
         let stream_value = self.stream.read().unwrap().clone().ok_or(LJMError::StreamNotStarted)?;
 
-        let stream_stop: Symbol<extern "C" fn(i32, *mut f64, *mut i32, *mut i32) -> i32> =
+        let stream_read: Symbol<extern "C" fn(i32, *mut f64, *mut i32, *mut i32) -> i32> =
             unsafe { self.get_c_function(b"LJM_eStreamRead")? };
 
         let mut dev_scan_backlog: i32 = 0;
@@ -434,7 +471,7 @@ impl LJMWrapper {
 
         let mut addr_slice = vec![0.0; scan_length];
 
-        let error_code = stream_stop(
+        let error_code = stream_read(
             handle,
             addr_slice.as_mut_ptr(),
             &mut dev_scan_backlog,
@@ -472,5 +509,71 @@ impl LJMWrapper {
         let error_code = d_read_library_config(ntr.as_ptr(), &mut vtr);
 
         self.error_code(vtr, error_code)
+    }
+
+    #[cfg(all(feature = "lua", feature = "tokio"))]
+    pub async fn set_module(&self, handle: i32, module: LuaModule) -> Result<(), LJMError> {
+        self.replace_module(handle, module)?;
+        self.stop_lua(handle).await?;
+        self.start_module(handle)
+    }
+
+    #[cfg(all(feature = "lua", not(feature = "tokio")))]
+    pub fn set_module(&self, handle: i32, module: LuaModule) -> Result<(), LJMError> {
+        self.replace_module(handle, module)?;
+        self.stop_lua(handle)?;
+        self.start_module(handle)
+    }
+
+    #[cfg(feature = "lua")]
+    fn start_module(&self, handle: i32) -> Result<(), LJMError> {
+        let module = self.module.read().unwrap().clone().ok_or(LJMError::ScriptNotSet)?;
+
+        self.write_name(handle, "LUA_SOURCE_SIZE", module.size() as u32)?;
+        self.write_name_byte_array(handle, "LUA_SOURCE_WRITE", module.size() as i32, module.script())?;
+
+        self.write_name(handle, "LUA_DEBUG_ENABLE", 1)?;
+        self.write_name(handle, "LUA_DEBUG_ENABLE_DEFAULT", 1)?;
+        self.write_name(handle, "LUA_RUN", 1)?;
+
+        Ok(())
+    }
+
+    fn replace_module(&self, handle: i32, module: LuaModule) -> Result<(), LJMError> {
+        // If there is a script still running, we shouldn't replace anything.
+        if self.lua_running(handle)? {
+            return Err(LJMError::ScriptStillRunning);
+        }
+
+        let mut w_mod = self.module.write().unwrap();
+        w_mod.replace(module);
+        Ok(())
+    }
+
+    #[cfg(feature = "lua")]
+    pub fn lua_running(&self, handle: i32) -> Result<bool, LJMError> {
+        Ok(self.read_name(handle, "LUA_RUN")? == 1_f64)
+    }
+
+    #[cfg(all(feature = "lua", feature = "tokio"))]
+    pub async fn stop_lua(&self, handle: i32) -> Result<(), LJMError> {
+        let mut interval = tokio::time::interval(tokio::time::Duration::from_millis(50));
+
+        while self.lua_running(handle)? {
+            self.write_name(handle, "LUA_RUN", 0)?;
+            interval.tick().await;
+        }
+
+        Ok(())
+    }
+
+    #[cfg(all(feature = "lua", not(feature = "tokio")))]
+    pub fn stop_lua(&self, handle: i32) -> Result<(), LJMError> {
+        while self.lua_running(handle)? {
+            self.write_name(handle, "LUA_RUN", 0)?;
+            std::thread::sleep(std::time::Duration::from_millis(50))
+        }
+
+        Ok(())
     }
 }

@@ -8,10 +8,13 @@ edition = "2021"
 [dependencies]
 libloading = "0.8"
 serde = { version = "1.0.192", features = ["std", "derive"], optional = true }
+tokio = { version = "1.32.0", features = ["time", "rt-multi-thread", "macros"], optional = true }
 
 [features]
 stream = []
-default = ["stream"]
+lua = []
+tokio = ["dep:tokio"]
+default = ["stream", "lua"]
 
 [lib]
 name = "ljmrs"
