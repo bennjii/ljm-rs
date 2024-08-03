@@ -539,6 +539,7 @@ impl LJMWrapper {
         Ok(())
     }
 
+    #[cfg(feature = "lua")]
     fn replace_module(&self, handle: i32, module: LuaModule) -> Result<(), LJMError> {
         // If there is a script still running, we shouldn't replace anything.
         if self.lua_running(handle)? {
