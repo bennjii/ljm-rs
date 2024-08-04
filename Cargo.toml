@@ -19,3 +19,8 @@ default = ["stream"]
 [lib]
 name = "ljmrs"
 path = "src/lib.rs"
+
+[[example]]
+name = "lua"
+path = "examples/lua.rs"
+required-features = ["lua"]
