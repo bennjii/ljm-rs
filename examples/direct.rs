@@ -2,12 +2,12 @@ extern crate ljmrs;
 
 use std::time::Instant;
 
-use ljmrs::LJMWrapper;
+use ljmrs::LJMLibrary;
 
 fn stream() {
-    unsafe { LJMWrapper::init(None) }.unwrap();
+    unsafe { LJMLibrary::init(None) }.unwrap();
 
-    let open_call = LJMWrapper::open_jack(
+    let open_call = LJMLibrary::open_jack(
         ljmrs::DeviceType::ANY,
         ljmrs::ConnectionType::ANY,
         "-2".to_string(), // Use "ANY" for physical hardware
@@ -18,8 +18,8 @@ fn stream() {
     let now = Instant::now();
 
     for _ in 0..50 {
-        LJMWrapper::read_name(open_call, "AIN0").expect("");
-        LJMWrapper::read_name(open_call, "AIN1").expect("");
+        LJMLibrary::read_name(open_call, "AIN0").expect("");
+        LJMLibrary::read_name(open_call, "AIN1").expect("");
     }
 
     let elapsed = now.elapsed();

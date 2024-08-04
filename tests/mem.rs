@@ -1,5 +1,5 @@
 use ljmrs;
-use ljmrs::{LJMError, LJMErrorCode, LJMWrapper};
+use ljmrs::{LJMError, LJMErrorCode, LJMLibrary};
 
 fn assert_error(error: LJMError, error_code: i32) {
     assert!(
@@ -14,7 +14,7 @@ fn assert_error(error: LJMError, error_code: i32) {
 
 #[test]
 fn bad_open() {
-    let ljm_wrapper = unsafe { LJMWrapper::init(None) }.unwrap();
+    let ljm_wrapper = unsafe { LJMLibrary::init(None) }.unwrap();
 
     // Forge a fake handle
     let handle: i32 = -1;
@@ -29,7 +29,7 @@ fn bad_open() {
 
 #[test]
 fn fake_write() {
-    let ljm_wrapper = unsafe { LJMWrapper::init(None) }.unwrap();
+    let ljm_wrapper = unsafe { LJMLibrary::init(None) }.unwrap();
 
     // Forge a fake handle
     let handle: i32 = -1;
@@ -48,7 +48,7 @@ fn fake_write() {
 
 #[test]
 fn use_after_write() {
-    let ljm_wrapper = unsafe { LJMWrapper::init(None) }.unwrap();
+    let ljm_wrapper = unsafe { LJMLibrary::init(None) }.unwrap();
 
     // Forge a fake handle
     let handle: i32 = -1;
@@ -68,7 +68,7 @@ fn use_after_write() {
 // when called by rust's automatic `drop` calls, as it may lead to a double free.
 #[test]
 fn uaw2() {
-    let ljm_wrapper = unsafe { LJMWrapper::init(None) }.unwrap();
+    let ljm_wrapper = unsafe { LJMLibrary::init(None) }.unwrap();
 
     // Forge a fake handle
     let handle: i32 = -1;

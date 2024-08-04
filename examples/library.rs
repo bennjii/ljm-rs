@@ -1,12 +1,12 @@
 extern crate ljmrs;
 
-use ljmrs::LJMWrapper;
+use ljmrs::LJMLibrary;
 
 fn library() {
     let unique_library_location = "/usr/lib/ljm/libLabJackM.dylib".to_string();
-    unsafe { LJMWrapper::init(Some(unique_library_location)) }.unwrap();
+    unsafe { LJMLibrary::init(Some(unique_library_location)) }.unwrap();
 
-    let open_call = LJMWrapper::open_jack(
+    let open_call = LJMLibrary::open_jack(
         ljmrs::DeviceType::ANY,
         ljmrs::ConnectionType::ANY,
         "-2".to_string(),

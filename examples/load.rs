@@ -2,14 +2,14 @@ extern crate ljmrs;
 
 use std::time::Instant;
 
-use ljmrs::LJMWrapper;
+use ljmrs::LJMLibrary;
 
 fn load() {
     let now = Instant::now();
 
-    unsafe { LJMWrapper::init(None) }.unwrap();
+    unsafe { LJMLibrary::init(None) }.unwrap();
 
-    let open_call = LJMWrapper::open_jack(
+    let open_call = LJMLibrary::open_jack(
         ljmrs::DeviceType::ANY,
         ljmrs::ConnectionType::ANY,
         "-2".to_string(),
@@ -24,7 +24,7 @@ fn load() {
 
     let name: &str = "FIO0";
 
-    let (addr, typ) = LJMWrapper::name_to_address(name)
+    let (addr, typ) = LJMLibrary::name_to_address(name)
         .expect("Expected NTA");
     println!("{name} => Address: {}, Type: {}", addr, typ);
 

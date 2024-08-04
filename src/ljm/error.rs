@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 
-use crate::LJMWrapper;
+use crate::LJMLibrary;
 
 /// Taken from: [LJM ErrorCodes](https://labjack.com/pages/support?doc=%2Fsoftware-driver%2Fljm-users-guide%2Ferror-codes%2F)
 ///
@@ -66,7 +66,7 @@ impl Debug for LJMErrorCode {
 }
 
 pub enum LJMError {
-    WrapperInvalid(LJMWrapper),
+    WrapperInvalid(LJMLibrary),
     StartupError(libloading::Error),
     ErrorCode(LJMErrorCode, String),
     LibraryError(String),

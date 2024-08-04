@@ -2,12 +2,12 @@ extern crate ljmrs;
 
 use std::time::Instant;
 
-use ljmrs::LJMWrapper;
+use ljmrs::LJMLibrary;
 
 fn stream() {
-    unsafe { LJMWrapper::init(None) }.unwrap();
+    unsafe { LJMLibrary::init(None) }.unwrap();
 
-    let open_call = LJMWrapper::open_jack(
+    let open_call = LJMLibrary::open_jack(
         ljmrs::DeviceType::ANY,
         ljmrs::ConnectionType::ANY,
         "-2".to_string(), // Use "ANY" for physical hardware
@@ -20,16 +20,16 @@ fn stream() {
     // Do note that this examples will fail on
     // DEMO mode labjacks, as currently stream mode
     // is not supported for them.
-    LJMWrapper::stream_start(open_call, 2, 50_000.0, streams)
+    LJMLibrary::stream_start(open_call, 2, 50_000.0, streams)
         .expect("Failed to start stream");
 
-    assert!(LJMWrapper::is_stream_active());
+    assert!(LJMLibrary::is_stream_active());
 
     let now = Instant::now();
 
     let mut i = 0;
     while i < 50 {
-        let read_value = LJMWrapper::stream_read(open_call)
+        let read_value = LJMLibrary::stream_read(open_call)
             .expect("Could not read values");
 
         println!("Got {}: {:?}", read_value.len(), read_value);
@@ -39,9 +39,9 @@ fn stream() {
     let elapsed = now.elapsed();
     println!("Elapsed: {:.2?}", elapsed);
 
-    LJMWrapper::stream_stop(open_call).expect("Expected Value");
+    LJMLibrary::stream_stop(open_call).expect("Expected Value");
 
-    assert!(!LJMWrapper::is_stream_active());
+    assert!(!LJMLibrary::is_stream_active());
 }
 
 fn main() {

@@ -1,11 +1,11 @@
 extern crate ljmrs;
 
-use ljmrs::LJMWrapper;
+use ljmrs::LJMLibrary;
 
 fn info() {
-    unsafe { LJMWrapper::init(None) }.unwrap();
+    unsafe { LJMLibrary::init(None) }.unwrap();
 
-    let open_call = LJMWrapper::open_jack(
+    let open_call = LJMLibrary::open_jack(
         ljmrs::DeviceType::ANY,
         ljmrs::ConnectionType::ANY,
         "-2".to_string(),
@@ -14,13 +14,13 @@ fn info() {
     println!("Opened LabJack, got handle: {}", &open_call);
 
     let info =
-        LJMWrapper::get_handle_info(open_call).expect("Handle verification failed.");
+        LJMLibrary::get_handle_info(open_call).expect("Handle verification failed.");
 
     println!("--- LabJack Info ---\n{}\n--- LabJack Info ---", info);
 
     // The C String recovery is an unsafe process
     let ip = unsafe {
-        LJMWrapper::number_to_ip(info.ip_address).expect("Could not convert IP.")
+        LJMLibrary::number_to_ip(info.ip_address).expect("Could not convert IP.")
     };
     println!("IP: {ip}");
 }

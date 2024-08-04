@@ -1,6 +1,6 @@
 extern crate ljmrs;
 
-use ljmrs::{LJMWrapper, LuaModule};
+use ljmrs::{LJMLibrary, LuaModule};
 
 const SCRIPT: &str = r#"
 local ramval = 0
@@ -32,9 +32,9 @@ end
 "#;
 
 fn init() -> i32 {
-    unsafe { LJMWrapper::init(None) }.unwrap();
+    unsafe { LJMLibrary::init(None) }.unwrap();
 
-    LJMWrapper::open_jack(
+    LJMLibrary::open_jack(
         ljmrs::DeviceType::ANY,
         ljmrs::ConnectionType::ANY,
         "-2".to_string(),
@@ -49,7 +49,7 @@ async fn main() {
     let module = LuaModule::new(SCRIPT);
     println!("Setting LUA module of size: {}", module.size());
 
-    LJMWrapper::set_module(open_call, module).await.unwrap();
+    LJMLibrary::set_module(open_call, module).await.unwrap();
     println!("Module set!");
 }
 
@@ -59,6 +59,6 @@ fn main() {
     let module = LuaModule::new(SCRIPT);
     println!("Setting LUA module of size: {}", module.size());
 
-    LJMWrapper::set_module(open_call, module).unwrap();
+    LJMLibrary::set_module(open_call, module).unwrap();
     println!("Module set!");
 }

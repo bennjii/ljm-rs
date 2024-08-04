@@ -1,7 +1,7 @@
 use std::time::Instant;
 
 use ljmrs;
-use ljmrs::{LJMError, LJMErrorCode, LJMWrapper};
+use ljmrs::{LJMError, LJMErrorCode, LJMLibrary};
 
 fn assert_error(error: LJMError, error_code: i32) {
     assert!(
@@ -16,7 +16,7 @@ fn assert_error(error: LJMError, error_code: i32) {
 
 #[test]
 fn open() {
-    let ljm_wrapper = unsafe { LJMWrapper::init(None) }.unwrap();
+    let ljm_wrapper = unsafe { LJMLibrary::init(None) }.unwrap();
 
     let open_call = ljm_wrapper
         .open_jack(
@@ -30,7 +30,7 @@ fn open() {
 
 #[test]
 fn get_name() {
-    let ljm_wrapper = unsafe { LJMWrapper::init(None) }.unwrap();
+    let ljm_wrapper = unsafe { LJMLibrary::init(None) }.unwrap();
 
     let mut elapsed_times: Vec<f32> = vec![];
     let addresses = vec!["AIN0", "AIN1", "AIN2", "AIN3", "FIO0", "FIO1"];
@@ -50,7 +50,7 @@ fn get_name() {
 
 #[test]
 fn standard_open_read() {
-    let ljm_wrapper = unsafe { LJMWrapper::init(None) }.unwrap();
+    let ljm_wrapper = unsafe { LJMLibrary::init(None) }.unwrap();
 
     let open_call = ljm_wrapper
         .open_jack(
