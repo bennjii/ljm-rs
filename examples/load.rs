@@ -2,20 +2,18 @@ extern crate ljmrs;
 
 use std::time::Instant;
 
-use ljmrs::LJMWrapper;
+use ljmrs::LJMLibrary;
 
 fn load() {
     let now = Instant::now();
 
-    let ljm_wrapper = unsafe { LJMWrapper::init(None) }.unwrap();
+    unsafe { LJMLibrary::init(None) }.unwrap();
 
-    let open_call = ljm_wrapper
-        .open_jack(
-            ljmrs::DeviceType::ANY,
-            ljmrs::ConnectionType::ANY,
-            "-2".to_string(),
-        )
-        .expect("Could not open DEMO LabJack");
+    let open_call = LJMLibrary::open_jack(
+        ljmrs::DeviceType::ANY,
+        ljmrs::ConnectionType::ANY,
+        "-2".to_string(),
+    ).expect("Could not open DEMO LabJack");
 
     println!("Opened LabJack, got handle: {}", open_call);
 
@@ -26,8 +24,7 @@ fn load() {
 
     let name: &str = "FIO0";
 
-    let (addr, typ) = ljm_wrapper
-        .name_to_address(name)
+    let (addr, typ) = LJMLibrary::name_to_address(name)
         .expect("Expected NTA");
     println!("{name} => Address: {}, Type: {}", addr, typ);
 
