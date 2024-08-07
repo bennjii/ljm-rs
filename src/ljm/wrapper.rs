@@ -513,7 +513,7 @@ impl LJMLibrary {
     #[cfg(all(feature = "lua", feature = "tokio"))]
     pub async fn set_module(handle: i32, module: LuaModule) -> Result<(), LJMError> {
         LJMLibrary::replace_module(handle, module)?;
-        LJMLibrary::stop_lua(handle).await?;
+        LJMLibrary::stop_module(handle).await?;
         LJMLibrary::start_module(handle)
     }
 
@@ -561,7 +561,7 @@ impl LJMLibrary {
     pub async fn stop_module(handle: i32) -> Result<(), LJMError> {
         let mut interval = tokio::time::interval(tokio::time::Duration::from_millis(50));
 
-        while LJMLibrary::lua_running(handle)? {
+        while LJMLibrary::module_running(handle)? {
             LJMLibrary::write_name(handle, "LUA_RUN", 0)?;
             interval.tick().await;
         }
