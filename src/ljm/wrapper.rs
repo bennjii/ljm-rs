@@ -237,6 +237,35 @@ impl LJMLibrary {
         LJMLibrary::error_code((), error_code)
     }
 
+    #[doc(alias = "LJM_eReadNameByteArray")]
+    pub fn read_name_byte_array<T: Into<Vec<u8>>>(
+        handle: i32,
+        name_to_read: T,
+        size: i32,
+    ) -> Result<Vec<u8>, LJMError> {
+        let d_write_name_byte_array: Symbol<extern "C" fn(i32, *const c_char, i32, *mut u8, *mut i32) -> i32> =
+            unsafe { LJMLibrary::get_c_function(b"LJM_eReadNameByteArray")? };
+
+        // Only allocate as much as we need, and do so such that
+        // it will be initialized when written to - the C lib
+        // does not know the context, so we'll Box it (heap-alloc)
+        // with a static size of `size`.
+        let mut buffer: Box<[u8]> = vec![0u8; size as usize].into_boxed_slice();
+        let ntr = CString::new(name_to_read) // Name-To-Write
+            .expect("CString conversion failed");
+
+        let mut error_addr: i32 = 0;
+        let error_code = d_write_name_byte_array(
+            handle,
+            ntr.as_ptr(),
+            size,
+            buffer.as_mut_ptr(),
+            &mut error_addr,
+        );
+
+        LJMLibrary::error_code(buffer.into_vec(), error_code)
+    }
+
     /// Reads from a labjack given the handle and name to read.
     /// Returns an f64 value that is read from the labjack.
     #[doc(alias = "LJM_eReadName")]
@@ -439,18 +468,26 @@ impl LJMLibrary {
         LJMLibrary::error_code(scan_rate, error_code)
     }
 
-    /// Stops an LJM Stream started with `stream_start`
+    /// Stops an LJM Stream started with `stream_start`, returns the stream
+    /// that was active when the function was called. If none, no stream was
+    /// in place.
     #[doc(alias = "LJM_eStreamStop")]
     #[cfg(feature = "stream")]
-    pub fn stream_stop(handle: i32) -> Result<(), LJMError> {
+    pub fn stream_stop(handle: i32) -> Result<Option<LJMStream>, LJMError> {
         let stream_stop: Symbol<extern "C" fn(i32) -> i32> =
             unsafe { LJMLibrary::get_c_function(b"LJM_eStreamStop")? };
 
         let error_code = stream_stop(handle);
 
-        let _ = LJM_WRAPPER.get()
-            .ok_or(LJMError::Uninitialized)?.stream.write().map_err(|e| LJMError::LibraryError(e.to_string()))?.take();
-        LJMLibrary::error_code((), error_code)
+        // Remove stream from active
+        let stream = LJM_WRAPPER.get()
+            .ok_or(LJMError::Uninitialized)
+            ?.stream
+            .write()
+            .map_err(|e| LJMError::LibraryError(e.to_string()))
+            ?.take();
+
+        LJMLibrary::error_code(stream, error_code)
     }
 
     /// Stops an LJM Stream started with `stream_start`
@@ -511,29 +548,32 @@ impl LJMLibrary {
     }
 
     #[cfg(all(feature = "lua", feature = "tokio"))]
-    pub async fn set_module(handle: i32, module: LuaModule) -> Result<(), LJMError> {
+    pub async fn set_module(handle: i32, module: LuaModule, debug: bool) -> Result<(), LJMError> {
         LJMLibrary::replace_module(handle, module)?;
         LJMLibrary::stop_module(handle).await?;
-        LJMLibrary::start_module(handle)
+        LJMLibrary::start_module(handle, debug)
     }
 
     #[cfg(all(feature = "lua", not(feature = "tokio")))]
-    pub fn set_module(handle: i32, module: LuaModule) -> Result<(), LJMError> {
+    pub fn set_module(handle: i32, module: LuaModule, debug: bool) -> Result<(), LJMError> {
         LJMLibrary::replace_module(handle, module)?;
         LJMLibrary::stop_module(handle)?;
-        LJMLibrary::start_module(handle)
+        LJMLibrary::start_module(handle, debug)
     }
 
     #[cfg(feature = "lua")]
-    fn start_module(handle: i32) -> Result<(), LJMError> {
+    fn start_module(handle: i32, debug: bool) -> Result<(), LJMError> {
         let wrapper = LJM_WRAPPER.get();
         let module = wrapper.ok_or(LJMError::Uninitialized)?.module.read().unwrap().clone().ok_or(LJMError::ScriptNotSet)?;
 
         LJMLibrary::write_name(handle, "LUA_SOURCE_SIZE", module.size() as u32)?;
         LJMLibrary::write_name_byte_array(handle, "LUA_SOURCE_WRITE", module.size() as i32, module.script())?;
 
-        LJMLibrary::write_name(handle, "LUA_DEBUG_ENABLE", 1)?;
-        LJMLibrary::write_name(handle, "LUA_DEBUG_ENABLE_DEFAULT", 1)?;
+        if debug {
+            LJMLibrary::write_name(handle, "LUA_DEBUG_ENABLE", 1)?;
+            LJMLibrary::write_name(handle, "LUA_DEBUG_ENABLE_DEFAULT", 1)?;
+        }
+
         LJMLibrary::write_name(handle, "LUA_RUN", 1)?;
 
         Ok(())

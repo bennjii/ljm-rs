@@ -22,7 +22,7 @@ async fn main() {
     let module = LuaModule::new(SCRIPT);
     println!("Setting LUA module of size: {}", module.size());
 
-    LJMLibrary::set_module(open_call, module).await.unwrap();
+    LJMLibrary::set_module(open_call, module, true).await.unwrap();
     println!("Module set!");
 }
 
@@ -32,6 +32,6 @@ fn main() {
     let module = LuaModule::new(SCRIPT);
     println!("Setting LUA module of size: {}", module.size());
 
-    LJMLibrary::set_module(open_call, module).unwrap();
+    LJMLibrary::set_module(open_call, module, true).unwrap();
     println!("Module set!");
 }
