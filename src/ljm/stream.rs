@@ -1,5 +1,5 @@
 #[derive(Clone)]
-pub(crate) struct LJMStream {
+pub struct LJMStream {
     // Stores the scan rate
     pub(crate) scan_rate: f64,
 
