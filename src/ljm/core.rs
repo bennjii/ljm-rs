@@ -12,19 +12,11 @@ use crate::{
     ljm::handle::{ConnectionType, DeviceHandleInfo, DeviceType},
     LJMError,
 };
+use crate::ljm::stream::LJMStream;
 #[cfg(feature = "lua")]
-use crate::lua::LuaModule;
+use crate::lua::LJMLua;
 
 static LJM_WRAPPER: OnceLock<LJMLibrary> = OnceLock::new();
-
-#[derive(Clone)]
-struct LJMStream {
-    // Stores the scan rate
-    scan_rate: f64,
-
-    // Stores a list of the internal LJM addresses
-    scan_list: Vec<i32>,
-}
 
 pub struct LJMLibrary {
     pub library: Option<Library>,
@@ -34,7 +26,7 @@ pub struct LJMLibrary {
 
     // A device can only have one module at a time.
     #[cfg(feature = "lua")]
-    module: RwLock<Option<LuaModule>>,
+    module: RwLock<Option<LJMLua>>,
 }
 
 impl Debug for LJMLibrary {
@@ -42,39 +34,6 @@ impl Debug for LJMLibrary {
         write!(f, "LJMWrapper")
     }
 }
-
-// We always return a dummy wrapper (uninitialized library)
-// When being deserialized, as there is no way to correctly serialize
-// The wrapper.
-// #[cfg(feature = "serde")]
-// impl<'de> Deserialize<'de> for LJMWrapper {
-//     fn deserialize<D>(_deserializer: D) -> Result<Self, D::Error>
-//     where
-//         D: Deserializer<'de>,
-//     {
-//         Ok(LJMWrapper::dummy())
-//     }
-// }
-
-// #[cfg(feature = "serde")]
-// impl<'de> Deserialize<'de> for &'static LJMWrapper {
-//     fn deserialize<D>(_deserializer: D) -> Result<Self, D::Error>
-//     where
-//         D: Deserializer<'de>,
-//     {
-//         Ok(&LJM_WRAPPER)
-//     }
-// }
-//
-// #[cfg(feature = "serde")]
-// impl Serialize for &'static LJMWrapper {
-//     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-//     where
-//         S: Serializer,
-//     {
-//         serializer.serialize_unit()
-//     }
-// }
 
 impl LJMLibrary {
     pub(crate) fn error_code<T>(value: T, error_code: i32) -> Result<T, LJMError> {
@@ -283,10 +242,10 @@ impl LJMLibrary {
 
     /// Opens a LabJack and returns the handle id as an i32.
     #[doc(alias = "LJM_OpenS")]
-    pub fn open_jack(
+    pub fn open_jack<T: Into<Vec<u8>>>(
         device_type: DeviceType,
         connection_type: ConnectionType,
-        identifier: String,
+        identifier: T,
     ) -> Result<i32, LJMError> {
         let open_s: Symbol<
             extern "C" fn(*const c_char, *const c_char, *const c_char, *mut i32) -> i32,
@@ -494,7 +453,9 @@ impl LJMLibrary {
     #[doc(alias = "LJM_eStreamRead")]
     #[cfg(feature = "stream")]
     pub fn stream_read(handle: i32) -> Result<Vec<f64>, LJMError> {
-        let stream_value = LJM_WRAPPER.get().ok_or(LJMError::Uninitialized)?.stream.read().unwrap().clone().ok_or(LJMError::StreamNotStarted)?;
+        let stream_value = LJM_WRAPPER.get().ok_or(LJMError::Uninitialized)
+            ?.stream.read().unwrap().clone()
+            .ok_or(LJMError::StreamNotStarted)?;
 
         let stream_read: Symbol<extern "C" fn(i32, *mut f64, *mut i32, *mut i32) -> i32> =
             unsafe { LJMLibrary::get_c_function(b"LJM_eStreamRead")? };
@@ -548,14 +509,14 @@ impl LJMLibrary {
     }
 
     #[cfg(all(feature = "lua", feature = "tokio"))]
-    pub async fn set_module(handle: i32, module: LuaModule, debug: bool) -> Result<(), LJMError> {
+    pub async fn set_module(handle: i32, module: LJMLua, debug: bool) -> Result<(), LJMError> {
         LJMLibrary::replace_module(handle, module)?;
         LJMLibrary::stop_module(handle).await?;
         LJMLibrary::start_module(handle, debug)
     }
 
     #[cfg(all(feature = "lua", not(feature = "tokio")))]
-    pub fn set_module(handle: i32, module: LuaModule, debug: bool) -> Result<(), LJMError> {
+    pub fn set_module(handle: i32, module: LJMLua, debug: bool) -> Result<(), LJMError> {
         LJMLibrary::replace_module(handle, module)?;
         LJMLibrary::stop_module(handle)?;
         LJMLibrary::start_module(handle, debug)
@@ -580,7 +541,7 @@ impl LJMLibrary {
     }
 
     #[cfg(feature = "lua")]
-    fn replace_module(handle: i32, module: LuaModule) -> Result<(), LJMError> {
+    fn replace_module(handle: i32, module: LJMLua) -> Result<(), LJMError> {
         // If there is a script still running, we shouldn't replace anything.
         if LJMLibrary::module_running(handle)? {
             return Err(LJMError::ScriptStillRunning);
