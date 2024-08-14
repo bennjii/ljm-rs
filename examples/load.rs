@@ -7,8 +7,6 @@ use ljmrs::LJMLibrary;
 fn load() {
     let now = Instant::now();
 
-    unsafe { LJMLibrary::init(None) }.unwrap();
-
     let open_call = LJMLibrary::open_jack(
         ljmrs::DeviceType::ANY,
         ljmrs::ConnectionType::ANY,

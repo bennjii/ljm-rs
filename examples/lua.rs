@@ -5,7 +5,10 @@ use ljmrs::{LJMLibrary, LJMLua};
 const SCRIPT: &str = include_str!("example.lua");
 
 fn init() -> i32 {
+    #[cfg(feature = "dynlink")]
     unsafe { LJMLibrary::init(None) }.unwrap();
+    #[cfg(feature = "staticlink")]
+    unsafe { LJMLibrary::init() }.unwrap();
 
     LJMLibrary::open_jack(
         ljmrs::DeviceType::ANY,
