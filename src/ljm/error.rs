@@ -66,17 +66,22 @@ impl Debug for LJMErrorCode {
 }
 
 pub enum LJMError {
-    WrapperInvalid(LJMLibrary),
+    #[cfg(feature = "dynlink")]
     StartupError(libloading::Error),
+    #[cfg(feature = "dynlink")]
+    LibloadingError(libloading::Error),
+
+    WrapperInvalid(LJMLibrary),
     ErrorCode(LJMErrorCode, String),
     LibraryError(String),
-    LibloadingError(libloading::Error),
+
     Uninitialized,
     StreamNotStarted,
     ScriptNotSet,
     ScriptStillRunning,
 }
 
+#[cfg(feature = "dynlink")]
 impl From<libloading::Error> for LJMError {
     fn from(value: libloading::Error) -> Self {
         LJMError::LibloadingError(value)
@@ -89,15 +94,19 @@ impl Debug for LJMError {
             f,
             "{}",
             match self {
-                LJMError::ErrorCode(error, value) => format!("LJMError::{:?} ({})", error, value),
+                #[cfg(feature = "dynlink")]
                 LJMError::StartupError(error) => format!("StartupError::{:?}", error),
+                #[cfg(feature = "dynlink")]
                 LJMError::LibloadingError(error) => format!("LibraryLoadingError::{:?}", error),
+
+                LJMError::ErrorCode(error, value) => format!("LJMError::{:?} ({})", error, value),
                 LJMError::LibraryError(error) => format!("LibraryError::{:?}", error),
+                LJMError::WrapperInvalid(_) => "WrapperInvalidError".to_string(),
+
                 LJMError::Uninitialized => "UninitializedError".to_string(),
                 LJMError::StreamNotStarted => "StreamNotStartedError".to_string(),
                 LJMError::ScriptStillRunning => "ScriptStillRunningError".to_string(),
                 LJMError::ScriptNotSet => "ScriptNotSetError".to_string(),
-                LJMError::WrapperInvalid(_) => "WrapperInvalidError".to_string()
             }
         )
     }

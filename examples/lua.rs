@@ -1,11 +1,14 @@
 extern crate ljmrs;
 
-use ljmrs::{LJMLibrary, LuaModule};
+use ljmrs::{LJMLibrary, LJMLua};
 
 const SCRIPT: &str = include_str!("example.lua");
 
 fn init() -> i32 {
+    #[cfg(feature = "dynlink")]
     unsafe { LJMLibrary::init(None) }.unwrap();
+    #[cfg(feature = "staticlink")]
+    unsafe { LJMLibrary::init() }.unwrap();
 
     LJMLibrary::open_jack(
         ljmrs::DeviceType::ANY,
@@ -19,19 +22,19 @@ fn init() -> i32 {
 async fn main() {
     let open_call = init();
 
-    let module = LuaModule::new(SCRIPT);
+    let module = LJMLua::new(SCRIPT);
     println!("Setting LUA module of size: {}", module.size());
 
-    LJMLibrary::set_module(open_call, module).await.unwrap();
+    LJMLibrary::set_module(open_call, module, true).await.unwrap();
     println!("Module set!");
 }
 
 #[cfg(not(feature = "tokio"))]
 fn main() {
     let open_call = init();
-    let module = LuaModule::new(SCRIPT);
+    let module = LJMLua::new(SCRIPT);
     println!("Setting LUA module of size: {}", module.size());
 
-    LJMLibrary::set_module(open_call, module).unwrap();
+    LJMLibrary::set_module(open_call, module, true).unwrap();
     println!("Module set!");
 }

@@ -3,6 +3,7 @@ extern crate ljmrs;
 use ljmrs::LJMLibrary;
 
 fn info() {
+    #[cfg(feature = "dynlink")]
     unsafe { LJMLibrary::init(None) }.unwrap();
 
     let open_call = LJMLibrary::open_jack(

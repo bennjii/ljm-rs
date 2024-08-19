@@ -34,6 +34,7 @@ fn get_name() {
 
     let avg: f32 = elapsed_times.iter().sum::<f32>() / addresses.len() as f32;
     assert!(avg < 5.0f32, "Average time elapsed: {}. Computes: {:?}", avg, elapsed_times);
+    println!("Avg: {}", avg);
 }
 
 #[test]

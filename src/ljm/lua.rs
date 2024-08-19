@@ -1,17 +1,17 @@
 #[derive(Clone)]
-pub struct LuaModule {
+pub struct LJMLua {
     script: String,
 }
 
-impl Into<LuaModule> for String {
-    fn into(self) -> LuaModule {
-        LuaModule::new(self)
+impl Into<LJMLua> for String {
+    fn into(self) -> LJMLua {
+        LJMLua::new(self)
     }
 }
 
-impl LuaModule {
+impl LJMLua {
     pub fn new<T: ToString>(module: T) -> Self {
-        LuaModule {
+        LJMLua {
             script: module.to_string()
         }
     }
