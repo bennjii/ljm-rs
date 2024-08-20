@@ -133,7 +133,14 @@ impl LJMLibrary {
         // Allocate using stack. LJM States will not overflow.
         // https://support.labjack.com/docs/errortostring-ljm-user-s-guide#ErrorToString
         let mut buffer: [c_char; 256] = [0; 256];
+        #[cfg(feature = "staticlink")]
         unsafe { lib::LJM_ErrorToString(error_code, buffer.as_mut_ptr()) };
+        #[cfg(feature = "dynlink")]
+        let err_to_str: Symbol<extern "C" fn(i32, *mut c_char)> =
+            unsafe { LJMLibrary::get_c_function(b"LJM_ErrorToString")? };
+        #[cfg(feature = "dynlink")]
+        err_to_str(error_code, buffer.as_mut_ptr());
+
         let as_vec = buffer.to_vec()
             .into_iter()
             .map(|v| v as u8)
