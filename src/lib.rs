@@ -12,6 +12,7 @@ pub(crate) mod lib {
     #![allow(non_snake_case)]
     #![allow(unused)]
 
+    #[cfg(feature = "staticlink")]
     include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 }
 
