@@ -10,7 +10,7 @@ use std::{fmt::Display, sync::RwLock};
 #[cfg(feature = "dynlink")]
 use libloading::{Library, Symbol};
 
-use crate::{lib, ljm::handle::{ConnectionType, DeviceHandleInfo, DeviceType}, LJMError};
+use crate::{ljm::handle::{ConnectionType, DeviceHandleInfo, DeviceType}, LJMError};
 
 #[cfg(feature = "stream")]
 use crate::ljm::stream::LJMStream;
