@@ -31,6 +31,9 @@ fn read() {
     LJMLibrary::write_name(open_call, "TEST_INT32", 15)
         .expect("Expected Value");
 
+    LJMLibrary::write_name(open_call, "DAC0", 2.5)
+        .expect("Expected Value");
+
     let now = Instant::now();
 
     let read_value = LJMLibrary::read_name(open_call, "TEST_INT32")

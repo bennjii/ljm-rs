@@ -182,17 +182,17 @@ impl LJMLibrary {
     /// Takes a handle to the labjack, the name to be written and the value to be written.
     /// Does not return a value.
     #[doc(alias = "LJM_eWriteName")]
-    pub fn write_name<T: Into<Vec<u8>>>(
+    pub fn write_name<T: Into<Vec<u8>>, V: Into<c_double>>(
         handle: i32,
         name_to_write: T,
-        value_to_write: u32,
+        value_to_write: V,
     ) -> Result<(), LJMError> {
         #[cfg(feature = "dynlink")]
         let d_write_to_addr: Symbol<extern "C" fn(i32, *const c_char, c_double) -> i32> =
             unsafe { LJMLibrary::get_c_function(b"LJM_eWriteName")? };
 
         let ntw = CString::new(name_to_write).expect("CString conversion failed");
-        let vtw = c_double::from(value_to_write);
+        let vtw = c_double::from(value_to_write.into());
 
         #[cfg(feature = "dynlink")]
         let error_code = d_write_to_addr(handle, ntw.as_ptr(), vtw);
@@ -618,13 +618,13 @@ impl LJMLibrary {
     /// Digitally writes an integer config
     /// Does not return a value
     #[doc(alias = "LJM_WriteLibraryConfigS")]
-    pub fn set_config(config_name: String, config_value: u32) -> Result<(), LJMError> {
+    pub fn set_config<V: Into<c_double>>(config_name: String, config_value: V) -> Result<(), LJMError> {
         #[cfg(feature = "dynlink")]
         let d_write_to_addr: Symbol<extern "C" fn(*const c_char, c_double) -> i32> =
             unsafe { LJMLibrary::get_c_function(b"LJM_WriteLibraryConfigS")? };
 
         let ntw = CString::new(config_name).expect("CString conversion failed");
-        let vtw = c_double::from(config_value);
+        let vtw = c_double::from(config_value.into());
 
         #[cfg(feature = "dynlink")]
         let error_code = d_write_to_addr(ntw.as_ptr(), vtw);
