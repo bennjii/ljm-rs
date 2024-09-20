@@ -10,7 +10,10 @@ use std::{fmt::Display, sync::RwLock};
 #[cfg(feature = "dynlink")]
 use libloading::{Library, Symbol};
 
-use crate::{lib, ljm::handle::{ConnectionType, DeviceHandleInfo, DeviceType}, LJMError};
+#[cfg(feature = "staticlink")]
+use crate::lib;
+
+use crate::{ljm::handle::{ConnectionType, DeviceHandleInfo, DeviceType}, LJMError};
 
 #[cfg(feature = "stream")]
 use crate::ljm::stream::LJMStream;
@@ -81,12 +84,12 @@ impl LJMLibrary {
         }
     }
 
-    #[cfg(feature = "dynlink")]
+    #[cfg(all(feature = "dynlink", not(feature = "staticlink")))]
     pub fn is_initialised(&self) -> bool {
         self.library.is_some()
     }
 
-    #[cfg(feature = "staticlink")]
+    #[cfg(all(feature = "staticlink", not(feature = "dynlink")))]
     pub fn is_initialised(&self) -> bool {
         true
     }
@@ -98,7 +101,7 @@ impl LJMLibrary {
     /// This value is unsafe as it calls the underlying C library.
     /// The library is found at default paths, or at an overriden location
     /// specified by the `path` argument.
-    #[cfg(feature = "dynlink")]
+    #[cfg(all(feature = "dynlink", not(feature = "staticlink")))]
     pub unsafe fn init(path: Option<String>) -> Result<(), LJMError> {
         let library: Library = unsafe {
             let library_path = path.unwrap_or_else(LJMLibrary::get_library_path);
@@ -118,7 +121,7 @@ impl LJMLibrary {
         }).map_err(|e| LJMError::WrapperInvalid(e))
     }
 
-    #[cfg(feature = "staticlink")]
+    #[cfg(all(feature = "staticlink", not(feature = "dynlink")))]
     pub unsafe fn init() -> Result<(), LJMError> {
         LJM_WRAPPER.set(LJMLibrary {
             #[cfg(feature = "stream")]
