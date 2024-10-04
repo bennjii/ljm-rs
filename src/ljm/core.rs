@@ -545,7 +545,7 @@ impl LJMLibrary {
 
             stream.replace(LJMStream {
                 scan_list: addresses,
-                scan_rate,
+                scans_per_read,
             });
         }
 
@@ -594,7 +594,7 @@ impl LJMLibrary {
         let mut ljm_scan_backlog: i32 = 0;
 
         // Length = ScansPerRead * NumberOfAddresses
-        let scan_length = stream_value.scan_rate as usize * stream_value.scan_list.len();
+        let scan_length = stream_value.scans_per_read as usize * stream_value.scan_list.len();
 
         let mut addr_slice = vec![0.0; scan_length];
 
