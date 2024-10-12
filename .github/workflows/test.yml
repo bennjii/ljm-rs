@@ -8,11 +8,27 @@ on:
     types: [opened, synchronize]
 
 jobs:
-  build:
+  lint:
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: LJM Cache
+        id: cache-ljm
+        uses: actions/cache@v4
+        with:
+          path: /usr/local/lib/ljm
+          key: ljm-cache
+          restore-keys: ljm-cache-
+
+      - name: LJM Install
+        if: steps.cache-ljm.outputs.cache-hit != 'true'
+        run: |
+          curl -sSLO https://files.labjack.com/installers/LJM/Linux/AArch64/beta/labjack_ljm_minimal_2020_03_31_aarch64_beta_0.tar.gz
+          tar -zvxf labjack_ljm_minimal_2020_03_31_aarch64.tar.gz
+          cd labjack_ljm_minimal_2020_03_31_aarch64
+          sudo ./labjack_ljm_installer.run
 
       - name: Rust Cache
         uses: actions/cache@v4
