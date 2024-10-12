@@ -8,7 +8,7 @@ on:
     types: [opened, synchronize]
 
 env:
-  LD_LIBRARY_PATH: /usr/local/lib/ljm
+  LD_LIBRARY_PATH: /lib:/usr/lib:/usr/local/lib:/usr/local/lib/ljm
 
 jobs:
   lint:
