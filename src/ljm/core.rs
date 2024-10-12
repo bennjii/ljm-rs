@@ -102,6 +102,13 @@ impl LJMLibrary {
     /// The library is found at default paths, or at an overriden location
     /// specified by the `path` argument.
     #[cfg(all(feature = "dynlink", not(feature = "staticlink")))]
+    /// # Safety
+    /// This function may fail, as runtime linking does not guarantee
+    /// the binary will be found, in which case the program must panic.
+    /// 
+    /// You may wish to try guarantee the library exists beforehand,
+    /// or use the [`staticlink`] feature, which provides guarantees
+    /// over the function definition but not over the binary itself.
     pub unsafe fn init(path: Option<String>) -> Result<(), LJMError> {
         let library: Library = unsafe {
             let library_path = path.unwrap_or_else(LJMLibrary::get_library_path);
@@ -118,17 +125,17 @@ impl LJMLibrary {
             stream: RwLock::new(None),
             #[cfg(feature = "lua")]
             module: RwLock::new(None),
-        }).map_err(|e| LJMError::WrapperInvalid(e))
+        }).map_err(LJMError::WrapperInvalid)
     }
 
     #[cfg(all(feature = "staticlink", not(feature = "dynlink")))]
-    pub unsafe fn init() -> Result<(), LJMError> {
+    pub fn init() -> Result<(), LJMError> {
         LJM_WRAPPER.set(LJMLibrary {
             #[cfg(feature = "stream")]
             stream: RwLock::new(None),
             #[cfg(feature = "lua")]
             module: RwLock::new(None),
-        }).map_err(|e| LJMError::WrapperInvalid(e))
+        }).map_err(LJMError::WrapperInvalid)
     }
 
     #[doc(alias = "LJM_ErrorToString")]
@@ -144,7 +151,7 @@ impl LJMLibrary {
         #[cfg(feature = "dynlink")]
         err_to_str(error_code, buffer.as_mut_ptr());
 
-        let as_vec = buffer.to_vec()
+        let as_vec = buffer
             .into_iter()
             .map(|v| v as u8)
             .collect::<Vec<u8>>();
@@ -287,7 +294,7 @@ impl LJMLibrary {
         };
 
         #[cfg(feature = "staticlink")]
-        let as_vec = buffer.to_vec().into_iter().map(|v| v as u8).collect();
+        let as_vec = buffer.iter().map(|v| *v as u8).collect();
 
         #[cfg(feature = "dynlink")]
         let as_vec = buffer.into_vec();

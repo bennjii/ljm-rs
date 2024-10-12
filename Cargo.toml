@@ -20,7 +20,7 @@ tokio = ["dep:tokio"]
 dynlink = ["libloading"]
 staticlink = []
 
-default = ["stream", "staticlink"]
+default = ["stream", "dynlink"]
 
 [lib]
 name = "ljmrs"
