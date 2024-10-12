@@ -5,7 +5,7 @@ use ljmrs::LJMLibrary;
 
 #[test]
 fn open() {
-    let _ = unsafe { LJMLibrary::init(None) };
+    let _ = unsafe { LJMLibrary::init() };
 
     let open_call = LJMLibrary::open_jack(
         ljmrs::DeviceType::ANY,
@@ -18,7 +18,7 @@ fn open() {
 
 #[test]
 fn get_name() {
-    let _ = unsafe { LJMLibrary::init(None) };
+    let _ = unsafe { LJMLibrary::init() };
 
     let mut elapsed_times: Vec<f32> = vec![];
     let addresses = vec!["AIN0", "AIN1", "AIN2", "AIN3", "FIO0", "FIO1"];
@@ -39,7 +39,7 @@ fn get_name() {
 
 #[test]
 fn standard_open_read() {
-    let _ = unsafe { LJMLibrary::init(None) };
+    let _ = unsafe { LJMLibrary::init() };
 
     let open_call = LJMLibrary::open_jack(
         ljmrs::DeviceType::ANY,
