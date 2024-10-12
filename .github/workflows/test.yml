@@ -9,6 +9,7 @@ on:
 
 env:
   LD_LIBRARY_PATH: /lib:/usr/lib:/usr/local/lib:/usr/local/lib/ljm
+  RUSTFLAGS: "-L /usr/local/lib/ljm"
 
 jobs:
   lint:
