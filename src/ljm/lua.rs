@@ -3,9 +3,9 @@ pub struct LJMLua {
     script: String,
 }
 
-impl Into<LJMLua> for String {
-    fn into(self) -> LJMLua {
-        LJMLua::new(self)
+impl From<String> for LJMLua {
+    fn from(val: String) -> Self {
+        LJMLua::new(val)
     }
 }
 

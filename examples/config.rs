@@ -3,9 +3,6 @@ extern crate ljmrs;
 use ljmrs::LJMLibrary;
 
 fn read() {
-    #[cfg(feature = "dynlink")]
-    unsafe { LJMLibrary::init(None) }.unwrap();
-    #[cfg(feature = "staticlink")]
     unsafe { LJMLibrary::init() }.unwrap();
 
     let open_call = LJMLibrary::open_jack(
