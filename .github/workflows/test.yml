@@ -7,6 +7,9 @@ on:
   pull_request:
     types: [opened, synchronize]
 
+env:
+  LD_LIBRARY_PATH: /usr/local/lib/ljm
+
 jobs:
   lint:
     runs-on: ubuntu-latest
@@ -29,6 +32,7 @@ jobs:
           tar -zvxf labjack_ljm_minimal_2020_03_31_aarch64_beta_0.tar.gz
           cd labjack_ljm_minimal_2020_03_31_aarch64
           sudo ./labjack_ljm_installer.run
+          sudo ldconfig
 
       - name: Rust Cache
         uses: actions/cache@v4
