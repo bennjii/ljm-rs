@@ -19,7 +19,7 @@ pub enum LJMErrorCode {
     // 2000-2999
     UserError(i32),
     // 3900-3999
-    Unknown(i32),         // For any values outside these ranges.
+    Unknown(i32), // For any values outside these ranges.
 }
 
 impl From<&LJMErrorCode> for i32 {

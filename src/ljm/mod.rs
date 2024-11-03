@@ -5,9 +5,8 @@ pub use error::*;
 pub use handle::*;
 pub use lua::*;
 
+pub mod core;
 pub mod error;
 pub mod handle;
 pub mod lua;
-pub mod core;
 pub mod stream;
-

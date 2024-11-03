@@ -12,7 +12,7 @@ impl Into<LJMLua> for String {
 impl LJMLua {
     pub fn new<T: ToString>(module: T) -> Self {
         LJMLua {
-            script: module.to_string()
+            script: module.to_string(),
         }
     }
 
