@@ -79,6 +79,9 @@ pub enum LJMError {
     StreamNotStarted,
     ScriptNotSet,
     ScriptStillRunning,
+
+    PoisonedLock,
+    CStringConversionFailed,
 }
 
 #[cfg(feature = "dynlink")]
@@ -107,6 +110,8 @@ impl Debug for LJMError {
                 LJMError::StreamNotStarted => "StreamNotStartedError".to_string(),
                 LJMError::ScriptStillRunning => "ScriptStillRunningError".to_string(),
                 LJMError::ScriptNotSet => "ScriptNotSetError".to_string(),
+                LJMError::PoisonedLock => "PoisonedLockError".to_string(),
+                LJMError::CStringConversionFailed => "CStringConversionFailed".to_string(),
             }
         )
     }

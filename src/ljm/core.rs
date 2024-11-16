@@ -125,7 +125,7 @@ impl LJMLibrary {
                 #[cfg(feature = "lua")]
                 module: RwLock::new(None),
             })
-            .map_err(|e| LJMError::WrapperInvalid(e))
+            .map_err(LJMError::WrapperInvalid)
     }
 
     #[cfg(all(feature = "staticlink", not(feature = "dynlink")))]
@@ -155,11 +155,7 @@ impl LJMLibrary {
         #[cfg(feature = "dynlink")]
         err_to_str(error_code, buffer.as_mut_ptr());
 
-        let as_vec = buffer
-            .to_vec()
-            .into_iter()
-            .map(|v| v as u8)
-            .collect::<Vec<u8>>();
+        let as_vec = buffer.into_iter().map(|v| v as u8).collect::<Vec<u8>>();
 
         match std::str::from_utf8(as_vec.as_slice()) {
             Ok(v) => Ok(v.to_string()),
@@ -182,7 +178,8 @@ impl LJMLibrary {
         let n_to_addr: Symbol<extern "C" fn(*const c_char, *mut i32, *mut i32) -> i32> =
             unsafe { LJMLibrary::get_c_function(b"LJM_NameToAddress")? };
 
-        let name = CString::new(identifier.to_string()).expect("CString conversion failed");
+        let name =
+            CString::new(identifier.to_string()).map_err(|_| LJMError::CStringConversionFailed)?;
         let mut address: i32 = 0;
         let mut typ: i32 = 0;
 
@@ -207,7 +204,7 @@ impl LJMLibrary {
         let d_write_to_addr: Symbol<extern "C" fn(i32, *const c_char, c_double) -> i32> =
             unsafe { LJMLibrary::get_c_function(b"LJM_eWriteName")? };
 
-        let ntw = CString::new(name_to_write).expect("CString conversion failed");
+        let ntw = CString::new(name_to_write).map_err(|_| LJMError::CStringConversionFailed)?;
         let vtw = c_double::from(value_to_write.into());
 
         #[cfg(feature = "dynlink")]
@@ -251,10 +248,8 @@ impl LJMLibrary {
             extern "C" fn(i32, *const c_char, i32, *const c_char, *mut i32) -> i32,
         > = unsafe { LJMLibrary::get_c_function(b"LJM_eWriteNameByteArray")? };
 
-        let btw = CString::new(bytes) // Bytes-To-Write
-            .expect("CString conversion failed");
-        let ntw = CString::new(name_to_write) // Name-To-Write
-            .expect("CString conversion failed");
+        let btw = CString::new(bytes).map_err(|_| LJMError::CStringConversionFailed)?; // Bytes-To-Write
+        let ntw = CString::new(name_to_write).map_err(|_| LJMError::CStringConversionFailed)?; // Name-To-Write
 
         let mut error_addr: i32 = 0;
         #[cfg(feature = "dynlink")]
@@ -288,8 +283,7 @@ impl LJMLibrary {
         #[cfg(feature = "dynlink")]
         let mut buffer: Box<[u8]> = vec![0u8; size as usize].into_boxed_slice();
 
-        let ntr = CString::new(name_to_read) // Name-To-Write
-            .expect("CString conversion failed");
+        let ntr = CString::new(name_to_read).map_err(|_| LJMError::CStringConversionFailed)?; // Name-To-Write
 
         let mut error_addr: i32 = 0;
         #[cfg(feature = "dynlink")]
@@ -329,7 +323,7 @@ impl LJMLibrary {
             extern "C" fn(i32, *const c_char, *mut c_double) -> i32,
         > = unsafe { LJMLibrary::get_c_function(b"LJM_eReadName")? };
 
-        let ntr = CString::new(name_to_read).expect("CString conversion failed");
+        let ntr = CString::new(name_to_read).map_err(|_| LJMError::CStringConversionFailed)?;
         let mut vtr = c_double::from(-1);
 
         #[cfg(feature = "dynlink")]
@@ -368,12 +362,11 @@ impl LJMLibrary {
             extern "C" fn(*const c_char, *const c_char, *const c_char, *mut i32) -> i32,
         > = unsafe { LJMLibrary::get_c_function(b"LJM_OpenS")? };
 
-        let device_type = CString::new(device_type.to_string())
-            .expect("Device Type :: CString conversion failed");
+        let device_type =
+            CString::new(device_type.to_string()).map_err(|_| LJMError::CStringConversionFailed)?;
         let connection_type = CString::new(connection_type.to_string())
-            .expect("Connection Type :: CString conversion failed");
-        let identifier =
-            CString::new(identifier).expect("LabJack Identifier :: CString conversion failed");
+            .map_err(|_| LJMError::CStringConversionFailed)?;
+        let identifier = CString::new(identifier).map_err(|_| LJMError::CStringConversionFailed)?;
 
         let mut handle_id: i32 = 0;
 
@@ -450,7 +443,8 @@ impl LJMLibrary {
             ))
         })?;
 
-        let ip_address = CString::new("000.000.000.000").expect("CString conversion failed");
+        let ip_address =
+            CString::new("000.000.000.000").map_err(|_| LJMError::CStringConversionFailed)?;
         let ip_pointer = ip_address.into_raw();
 
         #[cfg(feature = "dynlink")]
@@ -594,7 +588,7 @@ impl LJMLibrary {
                 .ok_or(LJMError::Uninitialized)?
                 .stream
                 .write()
-                .unwrap();
+                .map_err(|_| LJMError::PoisonedLock)?;
 
             stream.replace(LJMStream {
                 scan_list: addresses,
@@ -641,7 +635,7 @@ impl LJMLibrary {
             .ok_or(LJMError::Uninitialized)?
             .stream
             .read()
-            .unwrap()
+            .map_err(|_| LJMError::PoisonedLock)?
             .clone()
             .ok_or(LJMError::StreamNotStarted)?;
 
@@ -688,7 +682,7 @@ impl LJMLibrary {
         let d_write_to_addr: Symbol<extern "C" fn(*const c_char, c_double) -> i32> =
             unsafe { LJMLibrary::get_c_function(b"LJM_WriteLibraryConfigS")? };
 
-        let ntw = CString::new(config_name).expect("CString conversion failed");
+        let ntw = CString::new(config_name).map_err(|_| LJMError::CStringConversionFailed)?;
         let vtw = c_double::from(config_value.into());
 
         #[cfg(feature = "dynlink")]
@@ -708,7 +702,7 @@ impl LJMLibrary {
             extern "C" fn(*const c_char, *mut c_double) -> i32,
         > = unsafe { LJMLibrary::get_c_function(b"LJM_ReadLibraryConfigS")? };
 
-        let ntr = CString::new(config_name).expect("CString conversion failed");
+        let ntr = CString::new(config_name).map_err(|_| LJMError::CStringConversionFailed)?;
         let mut vtr = c_double::from(-1);
 
         #[cfg(feature = "dynlink")]
@@ -740,7 +734,7 @@ impl LJMLibrary {
             .ok_or(LJMError::Uninitialized)?
             .module
             .read()
-            .unwrap()
+            .map_err(|_| LJMError::PoisonedLock)?
             .clone()
             .ok_or(LJMError::ScriptNotSet)?;
 
@@ -770,13 +764,14 @@ impl LJMLibrary {
         }
 
         let wrapper = LJM_WRAPPER.get();
-        let mut w_mod = wrapper
+        wrapper
             .ok_or(LJMError::Uninitialized)?
             .module
             .write()
-            .unwrap();
-        w_mod.replace(module);
-        Ok(())
+            .map(|mut rwg| {
+                rwg.replace(module);
+            })
+            .map_err(|_| LJMError::PoisonedLock)
     }
 
     #[cfg(feature = "lua")]
