@@ -529,13 +529,18 @@ impl LJMLibrary {
     }
 
     /// Starts a LJM Stream, stopped with `stream_stop`.
-    /// Returns actual device scan rate (chosen by LabJack)
+    /// Returns actual device scan rate (chosen by LabJack).
+    ///
+    /// As opposed to `stream_start`, accepts any Vec<T> where T: ToString.
+    /// Such that, you may provide the string-representation of LJM addresses,
+    /// permitting each can be decoded by LJMLibrary::name_to_address into a
+    /// logical LJM address.
     ///
     /// `suggested_scan_rate` The scan rate forwarded to LJM which it will attempt to use
     ///
     #[doc(alias = "LJM_eStreamStart")]
     #[cfg(feature = "stream")]
-    pub fn stream_start<T>(
+    pub fn stream_start_addr<T>(
         handle: i32,
         scans_per_read: i32,
         suggested_scan_rate: f64,
@@ -544,19 +549,33 @@ impl LJMLibrary {
     where
         T: ToString + Display,
     {
-        #[cfg(feature = "dynlink")]
-        let stream_start: Symbol<
-            extern "C" fn(i32, i32, i32, *const i32, *mut c_double) -> i32,
-        > = unsafe { LJMLibrary::get_c_function(b"LJM_eStreamStart")? };
-
-        let addresses_result: Result<Vec<i32>, LJMError> =
+        let addresses: Result<Vec<i32>, LJMError> =
             streams.iter().try_fold(Vec::new(), |mut acc, a| {
-                let address = LJMLibrary::name_to_address(a)?.0;
+                let (address, _) = LJMLibrary::name_to_address(a)?;
                 acc.push(address);
                 Ok(acc)
             });
 
-        let addresses = addresses_result?;
+        LJMLibrary::stream_start(handle, scans_per_read, suggested_scan_rate, addresses?)
+    }
+
+    /// Starts a LJM Stream, stopped with `stream_stop`.
+    /// Returns actual device scan rate (chosen by LabJack)
+    ///
+    /// `suggested_scan_rate` The scan rate forwarded to LJM which it will attempt to use
+    ///
+    #[doc(alias = "LJM_eStreamStart")]
+    #[cfg(feature = "stream")]
+    pub fn stream_start(
+        handle: i32,
+        scans_per_read: i32,
+        suggested_scan_rate: f64,
+        addresses: Vec<i32>,
+    ) -> Result<f64, LJMError> {
+        #[cfg(feature = "dynlink")]
+        let stream_start: Symbol<
+            extern "C" fn(i32, i32, i32, *const i32, *mut c_double) -> i32,
+        > = unsafe { LJMLibrary::get_c_function(b"LJM_eStreamStart")? };
 
         let addr_slice: &[i32] = &addresses;
         let mut scan_rate: f64 = suggested_scan_rate;
