@@ -79,6 +79,7 @@ pub enum LJMError {
     StreamNotStarted,
     ScriptNotSet,
     ScriptStillRunning,
+    BadState,
 
     PoisonedLock,
     CStringConversionFailed,
@@ -105,6 +106,7 @@ impl Debug for LJMError {
                 LJMError::ErrorCode(error, value) => format!("LJMError::{:?} ({})", error, value),
                 LJMError::LibraryError(error) => format!("LibraryError::{:?}", error),
                 LJMError::WrapperInvalid(_) => "WrapperInvalidError".to_string(),
+                LJMError::BadState => "BadStateError".to_string(),
 
                 LJMError::Uninitialized => "UninitializedError".to_string(),
                 LJMError::StreamNotStarted => "StreamNotStartedError".to_string(),
