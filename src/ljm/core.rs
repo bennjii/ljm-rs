@@ -110,7 +110,7 @@ impl LJMLibrary {
     /// # Safety
     /// This function may fail, as runtime linking does not guarantee
     /// the binary will be found, in which case the program must panic.
-    /// 
+    ///
     /// You may wish to try guarantee the library exists beforehand,
     /// or use the [`staticlink`] feature, which provides guarantees
     /// over the function definition but not over the binary itself.
@@ -128,7 +128,9 @@ impl LJMLibrary {
             stream: RwLock::new(None),
             #[cfg(feature = "lua")]
             module: RwLock::new(None),
-        }).map_err(LJMError::WrapperInvalid)
+        });
+
+        Ok(())
     }
 
     #[cfg(feature = "dynlink")]
@@ -147,13 +149,15 @@ impl LJMLibrary {
             }
         };
 
-        LJM_WRAPPER.set(LJMLibrary {
-            library: Some(library),
-            #[cfg(feature = "stream")]
-            stream: RwLock::new(None),
-            #[cfg(feature = "lua")]
-            module: RwLock::new(None),
-        }).map_err(LJMError::WrapperInvalid)
+        LJM_WRAPPER
+            .set(LJMLibrary {
+                library: Some(library),
+                #[cfg(feature = "stream")]
+                stream: RwLock::new(None),
+                #[cfg(feature = "lua")]
+                module: RwLock::new(None),
+            })
+            .map_err(LJMError::WrapperInvalid)
     }
 
     #[cfg(feature = "staticlink")]
@@ -163,7 +167,9 @@ impl LJMLibrary {
             stream: RwLock::new(None),
             #[cfg(feature = "lua")]
             module: RwLock::new(None),
-        }).map_err(LJMError::WrapperInvalid)
+        });
+
+        Ok(())
     }
 
     #[doc(alias = "LJM_ErrorToString")]
