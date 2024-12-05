@@ -12,7 +12,9 @@ fn assert_error(error: LJMError, error_code: i32) {
 
 #[test]
 fn bad_open() {
-    let _ = unsafe { LJMLibrary::init(None) };
+    if let Err(error) = unsafe { LJMLibrary::init() } {
+        debug_assert!(false, "Unable to init LJM. Reason: {:?}", error);
+    }
 
     // Forge a fake handle
     let handle: i32 = -1;
@@ -27,7 +29,9 @@ fn bad_open() {
 
 #[test]
 fn fake_write() {
-    let _ = unsafe { LJMLibrary::init(None) };
+    if let Err(error) = unsafe { LJMLibrary::init() } {
+        debug_assert!(false, "Unable to init LJM. Reason: {:?}", error);
+    }
 
     // Forge a fake handle
     let handle: i32 = -1;
@@ -46,7 +50,9 @@ fn fake_write() {
 
 #[test]
 fn use_after_write() {
-    let _ = unsafe { LJMLibrary::init(None) };
+    if let Err(error) = unsafe { LJMLibrary::init() } {
+        debug_assert!(false, "Unable to init LJM. Reason: {:?}", error);
+    }
 
     // Forge a fake handle
     let handle: i32 = -1;
@@ -66,7 +72,9 @@ fn use_after_write() {
 // when called by rust's automatic `drop` calls, as it may lead to a double free.
 #[test]
 fn uaw2() {
-    let _ = unsafe { LJMLibrary::init(None) };
+    if let Err(error) = unsafe { LJMLibrary::init() } {
+        debug_assert!(false, "Unable to init LJM. Reason: {:?}", error);
+    }
 
     // Forge a fake handle
     let handle: i32 = -1;

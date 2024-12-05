@@ -10,7 +10,7 @@ To use this library, you must first initialize it,
 this is done to purposefully expose the initialisation
 as a handleable failure. You can do so by:
 
-```rust
+```rust,ignore
 unsafe { LJMLibrary::init(None) }.unwrap();
 ```
 
@@ -25,7 +25,7 @@ a default is selected for you based on the compiled operating system.
 Methods are provided in the same format as the C library,
 you can open a labjack using the following code:
 
-```rust
+```rust,ignore
 // handle_id is `Result<i32, LJMError>`, which must be handled..
 let handle_id = LJMLibrary::open_jack(DeviceType::ANY, ConnectionType::ANY, "ANY");
 ```
@@ -39,7 +39,7 @@ function provided by the [`LJMLibrary`] structure.
 
 For example:
 
-```rust
+```rust,ignore
 let read_value = LJMLibrary::read_name(handle_id, "TEST_INT32");
 ```
 
@@ -65,13 +65,13 @@ You may see the example [here](https://github.com/bennjii/ljm-rs/blob/master/exa
 implementation.
 State is stored in a static `OnceLock`, so an invocation of:
 
-```rust
+```rust,ignore
 LJMLibrary::stream_start(open_call, scans_per_read, scan_rate, streams);
 ```
 
 Will then produce the correct buffer size when running
 
-```rust
+```rust,ignore
 let value: Vec<f64> = LJMLibrary::stream_read(open_call);
 ```
 
@@ -86,6 +86,9 @@ but the following function may be of assistance:
   <summary>Example unzip function</summary>
 
 ```rust
+use std::collections::HashMap;
+struct Sensor { id: i64 }
+
 /// `unzip(...)`
 ///
 /// Separates the LabJack stream encoding.
@@ -114,7 +117,7 @@ but the following function may be of assistance:
 ///     ...
 ///     SensorK: [ value 1, value 2, ... ]
 ///
-fn unzip(sensors: Vec<Sensor>, values: Vec<f64>) -> HashMap<String, Vec<f64>> {
+fn unzip(sensors: Vec<Sensor>, values: Vec<f64>) -> HashMap<i64, Vec<f64>> {
     let chunk_size = values.len() / sensors.len();
     let mut hash = HashMap::new();
 
@@ -122,7 +125,7 @@ fn unzip(sensors: Vec<Sensor>, values: Vec<f64>) -> HashMap<String, Vec<f64>> {
     for (i, x) in sensors.iter().enumerate() {
         // Separate into individual chunk-lets, them merge into a de-chunked set.
         let de_chunked: Vec<f64> = values
-            .chunks(items.len())
+            .chunks(sensors.len())
             .map(|chunk| chunk[i])
             .collect();
 
@@ -144,13 +147,13 @@ implementation.
 
 You are simply required to create the module by passing any `T: ToString` into `LJMLua::new`, like so:
 
-```rust
+```rust,ignore
 let module = LJMLua::new(SCRIPT);
 ```
 
 Then, you may set this module on your designated LabJack like so:
 
-```rust
+```rust,ignore
 let debug = true;
 let module_set = LJMLibrary::set_module(handle_id, module, debug); // .await;
 ```

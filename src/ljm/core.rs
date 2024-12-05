@@ -89,12 +89,12 @@ impl LJMLibrary {
         }
     }
 
-    #[cfg(all(feature = "dynlink", not(feature = "staticlink")))]
+    #[cfg(feature = "dynlink")]
     pub fn is_initialised(&self) -> bool {
         self.library.is_some()
     }
 
-    #[cfg(all(feature = "staticlink", not(feature = "dynlink")))]
+    #[cfg(feature = "staticlink")]
     pub fn is_initialised(&self) -> bool {
         true
     }
@@ -106,12 +106,44 @@ impl LJMLibrary {
     /// This value is unsafe as it calls the underlying C library.
     /// The library is found at default paths, or at an overriden location
     /// specified by the `path` argument.
-    #[cfg(all(feature = "dynlink", not(feature = "staticlink")))]
-    pub unsafe fn init(path: Option<String>) -> Result<(), LJMError> {
+    #[cfg(feature = "dynlink")]
+    /// # Safety
+    /// This function may fail, as runtime linking does not guarantee
+    /// the binary will be found, in which case the program must panic.
+    ///
+    /// You may wish to try guarantee the library exists beforehand,
+    /// or use the [`staticlink`] feature, which provides guarantees
+    /// over the function definition but not over the binary itself.
+    pub unsafe fn init() -> Result<(), LJMError> {
         let library: Library = unsafe {
-            let library_path = path.unwrap_or_else(LJMLibrary::get_library_path);
+            match Library::new(LJMLibrary::get_library_path()) {
+                Ok(library) => library,
+                Err(error) => return Err(LJMError::StartupError(error)),
+            }
+        };
 
-            match Library::new(library_path) {
+        LJM_WRAPPER.set(LJMLibrary {
+            library: Some(library),
+            #[cfg(feature = "stream")]
+            stream: RwLock::new(None),
+            #[cfg(feature = "lua")]
+            module: RwLock::new(None),
+        });
+
+        Ok(())
+    }
+
+    #[cfg(feature = "dynlink")]
+    /// # Safety
+    /// This function may fail, as runtime linking does not guarantee
+    /// the binary will be found, in which case the program must panic.
+    ///
+    /// You may wish to try guarantee the library exists beforehand,
+    /// or use the [`staticlink`] feature, which provides guarantees
+    /// over the function definition but not over the binary itself.
+    pub unsafe fn with_path(path: String) -> Result<(), LJMError> {
+        let library: Library = unsafe {
+            match Library::new(path) {
                 Ok(library) => library,
                 Err(error) => return Err(LJMError::StartupError(error)),
             }
@@ -128,16 +160,16 @@ impl LJMLibrary {
             .map_err(LJMError::WrapperInvalid)
     }
 
-    #[cfg(all(feature = "staticlink", not(feature = "dynlink")))]
-    pub unsafe fn init() -> Result<(), LJMError> {
-        LJM_WRAPPER
-            .set(LJMLibrary {
-                #[cfg(feature = "stream")]
-                stream: RwLock::new(None),
-                #[cfg(feature = "lua")]
-                module: RwLock::new(None),
-            })
-            .map_err(|e| LJMError::WrapperInvalid(e))
+    #[cfg(feature = "staticlink")]
+    pub fn init() -> Result<(), LJMError> {
+        LJM_WRAPPER.set(LJMLibrary {
+            #[cfg(feature = "stream")]
+            stream: RwLock::new(None),
+            #[cfg(feature = "lua")]
+            module: RwLock::new(None),
+        });
+
+        Ok(())
     }
 
     #[doc(alias = "LJM_ErrorToString")]
@@ -306,7 +338,7 @@ impl LJMLibrary {
         };
 
         #[cfg(feature = "staticlink")]
-        let as_vec = buffer.to_vec().into_iter().map(|v| v as u8).collect();
+        let as_vec = buffer.iter().map(|v| *v as u8).collect();
 
         #[cfg(feature = "dynlink")]
         let as_vec = buffer.into_vec();

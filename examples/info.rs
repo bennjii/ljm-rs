@@ -4,7 +4,7 @@ use ljmrs::LJMLibrary;
 
 fn info() {
     #[cfg(feature = "dynlink")]
-    unsafe { LJMLibrary::init(None) }.unwrap();
+    unsafe { LJMLibrary::init() }.unwrap();
 
     let open_call = LJMLibrary::open_jack(
         ljmrs::DeviceType::ANY,

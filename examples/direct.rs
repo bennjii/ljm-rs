@@ -5,9 +5,6 @@ use std::time::Instant;
 use ljmrs::LJMLibrary;
 
 fn stream() {
-    #[cfg(feature = "dynlink")]
-    unsafe { LJMLibrary::init(None) }.unwrap();
-    #[cfg(feature = "staticlink")]
     unsafe { LJMLibrary::init() }.unwrap();
 
     let open_call = LJMLibrary::open_jack(
