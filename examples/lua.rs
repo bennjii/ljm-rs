@@ -11,7 +11,8 @@ fn init() -> i32 {
         ljmrs::DeviceType::ANY,
         ljmrs::ConnectionType::ANY,
         "-2".to_string(),
-    ).expect("Could not open DEMO LabJack")
+    )
+    .expect("Could not open DEMO LabJack")
 }
 
 #[cfg(feature = "tokio")]
@@ -22,7 +23,9 @@ async fn main() {
     let module = LJMLua::new(SCRIPT);
     println!("Setting LUA module of size: {}", module.size());
 
-    LJMLibrary::set_module(open_call, module, true).await.unwrap();
+    LJMLibrary::set_module(open_call, module, true)
+        .await
+        .unwrap();
     println!("Module set!");
 }
 

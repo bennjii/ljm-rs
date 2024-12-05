@@ -19,7 +19,7 @@ pub enum LJMErrorCode {
     // 2000-2999
     UserError(i32),
     // 3900-3999
-    Unknown(i32),         // For any values outside these ranges.
+    Unknown(i32), // For any values outside these ranges.
 }
 
 impl From<&LJMErrorCode> for i32 {
@@ -79,6 +79,11 @@ pub enum LJMError {
     StreamNotStarted,
     ScriptNotSet,
     ScriptStillRunning,
+    BadState,
+    NoCoverage,
+
+    PoisonedLock,
+    CStringConversionFailed,
 }
 
 #[cfg(feature = "dynlink")]
@@ -102,11 +107,15 @@ impl Debug for LJMError {
                 LJMError::ErrorCode(error, value) => format!("LJMError::{:?} ({})", error, value),
                 LJMError::LibraryError(error) => format!("LibraryError::{:?}", error),
                 LJMError::WrapperInvalid(_) => "WrapperInvalidError".to_string(),
+                LJMError::BadState => "BadStateError".to_string(),
+                LJMError::NoCoverage => "NoCoverageError".to_string(),
 
                 LJMError::Uninitialized => "UninitializedError".to_string(),
                 LJMError::StreamNotStarted => "StreamNotStartedError".to_string(),
                 LJMError::ScriptStillRunning => "ScriptStillRunningError".to_string(),
                 LJMError::ScriptNotSet => "ScriptNotSetError".to_string(),
+                LJMError::PoisonedLock => "PoisonedLockError".to_string(),
+                LJMError::CStringConversionFailed => "CStringConversionFailed".to_string(),
             }
         )
     }

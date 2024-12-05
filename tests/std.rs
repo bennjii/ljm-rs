@@ -33,7 +33,12 @@ fn get_name() {
     }
 
     let avg: f32 = elapsed_times.iter().sum::<f32>() / addresses.len() as f32;
-    assert!(avg < 5.0f32, "Average time elapsed: {}. Computes: {:?}", avg, elapsed_times);
+    assert!(
+        avg < 5.0f32,
+        "Average time elapsed: {}. Computes: {:?}",
+        avg,
+        elapsed_times
+    );
     println!("Avg: {}", avg);
 }
 
@@ -45,12 +50,13 @@ fn standard_open_read() {
         ljmrs::DeviceType::ANY,
         ljmrs::ConnectionType::ANY,
         "-2".to_string(),
-    ).expect("Could not open DEMO LabJack");
+    )
+    .expect("Could not open DEMO LabJack");
 
     assert_ne!(open_call, -1);
 
-    let read_value = LJMLibrary::read_name(open_call, "TEST_INT32".to_string())
-        .expect("Expected Value");
+    let read_value =
+        LJMLibrary::read_name(open_call, "TEST_INT32".to_string()).expect("Expected Value");
 
     assert_eq!(read_value, 0f64);
 }
