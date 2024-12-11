@@ -14,7 +14,8 @@ fn stream() {
         ljmrs::DeviceType::ANY,
         ljmrs::ConnectionType::ANY,
         "-2".to_string(), // Use "ANY" for physical hardware
-    ).expect("Could not open DEMO LabJack");
+    )
+    .expect("Could not open DEMO LabJack");
 
     println!("Opened LabJack, got handle: {}", open_call);
 

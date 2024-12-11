@@ -2,14 +2,12 @@ use ljmrs;
 use ljmrs::{LJMError, LJMErrorCode, LJMLibrary};
 
 fn assert_error(error: LJMError, error_code: i32) {
-    assert!(
-        matches!(
-            error,
-            LJMError::ErrorCode(
-               i, _j
-            ) if i == LJMErrorCode::from(error_code)
-        )
-    );
+    assert!(matches!(
+        error,
+        LJMError::ErrorCode(
+           i, _j
+        ) if i == LJMErrorCode::from(error_code)
+    ));
 }
 
 #[test]
@@ -82,7 +80,8 @@ fn uaw2() {
         let modbus_range = format!("{}_RANGE", pin);
         let range = 0;
 
-        if let Err(error) = LJMLibrary::write_name(handle_ref.clone(), modbus_range.clone(), range) {
+        if let Err(error) = LJMLibrary::write_name(handle_ref.clone(), modbus_range.clone(), range)
+        {
             println!(
                 "Unable to write modbus range {} for {}, on {}. Reason: {:?}",
                 range, modbus_range, handle_ref, error
@@ -96,4 +95,3 @@ fn uaw2() {
 
     assert!(true);
 }
-

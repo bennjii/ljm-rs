@@ -3,16 +3,16 @@ pub struct LJMLua {
     script: String,
 }
 
-impl Into<LJMLua> for String {
-    fn into(self) -> LJMLua {
-        LJMLua::new(self)
+impl From<String> for LJMLua {
+    fn from(val: String) -> Self {
+        LJMLua::new(val)
     }
 }
 
 impl LJMLua {
     pub fn new<T: ToString>(module: T) -> Self {
         LJMLua {
-            script: module.to_string()
+            script: module.to_string(),
         }
     }
 
