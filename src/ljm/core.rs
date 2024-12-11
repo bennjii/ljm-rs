@@ -512,6 +512,10 @@ impl LJMLibrary {
         )
     }
 
+    /// This returns a boolean for the stream state (on/off)
+    /// for a specific device handle. There may still be streams
+    /// activated for other devices, however the function will
+    /// only give the stream state for the specified handle.
     #[cfg(feature = "stream")]
     pub fn is_stream_active(handle_id: i32) -> bool {
         let wrapper = LJM_WRAPPER.get();
