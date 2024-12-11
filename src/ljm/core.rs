@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::fmt::{Debug, Formatter};
 use std::sync::OnceLock;
 use std::{
@@ -30,7 +31,7 @@ pub struct LJMLibrary {
     pub library: Option<Library>,
 
     #[cfg(feature = "stream")]
-    stream: RwLock<Option<LJMStream>>,
+    stream: RwLock<HashMap<i32, LJMStream>>,
 
     // A device can only have one module at a time.
     #[cfg(feature = "lua")]
@@ -133,11 +134,11 @@ impl LJMLibrary {
         LJM_WRAPPER
             .set(LJMLibrary {
                 #[cfg(feature = "stream")]
-                stream: RwLock::new(None),
+                stream: RwLock::new(HashMap::new()),
                 #[cfg(feature = "lua")]
                 module: RwLock::new(None),
             })
-            .map_err(|e| LJMError::WrapperInvalid(e))
+            .map_err(LJMError::WrapperInvalid)
     }
 
     #[doc(alias = "LJM_ErrorToString")]
@@ -511,8 +512,12 @@ impl LJMLibrary {
         )
     }
 
+    /// This returns a boolean for the stream state (on/off)
+    /// for a specific device handle. There may still be streams
+    /// activated for other devices, however the function will
+    /// only give the stream state for the specified handle.
     #[cfg(feature = "stream")]
-    pub fn is_stream_active() -> bool {
+    pub fn is_stream_active(handle_id: i32) -> bool {
         let wrapper = LJM_WRAPPER.get();
 
         match wrapper {
@@ -520,7 +525,7 @@ impl LJMLibrary {
                 let stream = w.stream.read();
 
                 match stream {
-                    Ok(s) => s.is_some(),
+                    Ok(s) => s.get(&handle_id).is_some(),
                     Err(_) => false,
                 }
             }
@@ -609,10 +614,13 @@ impl LJMLibrary {
                 .write()
                 .map_err(|_| LJMError::PoisonedLock)?;
 
-            stream.replace(LJMStream {
-                scan_list: addresses,
-                scans_per_read,
-            });
+            stream.insert(
+                handle,
+                LJMStream {
+                    scan_list: addresses,
+                    scans_per_read,
+                },
+            );
         }
 
         LJMLibrary::error_code(scan_rate, error_code)
@@ -640,7 +648,7 @@ impl LJMLibrary {
             .stream
             .write()
             .map_err(|e| LJMError::LibraryError(e.to_string()))?
-            .take();
+            .remove(&handle);
 
         LJMLibrary::error_code(stream, error_code)
     }
@@ -649,14 +657,14 @@ impl LJMLibrary {
     #[doc(alias = "LJM_eStreamRead")]
     #[cfg(feature = "stream")]
     pub fn stream_read(handle: i32) -> Result<Vec<f64>, LJMError> {
-        let stream_value = LJM_WRAPPER
+        let lock = LJM_WRAPPER
             .get()
             .ok_or(LJMError::Uninitialized)?
             .stream
             .read()
-            .map_err(|_| LJMError::PoisonedLock)?
-            .clone()
-            .ok_or(LJMError::StreamNotStarted)?;
+            .map_err(|_| LJMError::StreamNotStarted)?;
+
+        let stream_value = lock.get(&handle).ok_or(LJMError::StreamNotStarted)?;
 
         #[cfg(feature = "dynlink")]
         let stream_read: Symbol<extern "C" fn(i32, *mut f64, *mut i32, *mut i32) -> i32> =

@@ -26,7 +26,7 @@ fn stream() {
     // is not supported for them.
     LJMLibrary::stream_start(open_call, 2, 50_000.0, streams).expect("Failed to start stream");
 
-    assert!(LJMLibrary::is_stream_active());
+    assert!(LJMLibrary::is_stream_active(open_call));
 
     let now = Instant::now();
 
@@ -43,7 +43,7 @@ fn stream() {
 
     LJMLibrary::stream_stop(open_call).expect("Expected Value");
 
-    assert!(!LJMLibrary::is_stream_active());
+    assert!(!LJMLibrary::is_stream_active(open_call));
 }
 
 fn main() {
