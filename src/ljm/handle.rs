@@ -1,12 +1,15 @@
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, Default)]
 pub enum DeviceType {
     T4,
     T7,
     T8,
     TSERIES,
     DIGIT,
+    #[default]
     ANY,
     EMULATED(i32),
     UNKNOWN(i32),
@@ -25,7 +28,7 @@ impl From<i32> for DeviceType {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum ConnectionType {
     USB,
     ETHERNET,
@@ -45,7 +48,7 @@ impl From<i32> for ConnectionType {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct DeviceHandleInfo {
     pub device_type: DeviceType,
     pub connection_type: ConnectionType,

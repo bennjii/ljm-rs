@@ -7,7 +7,12 @@ edition = "2021"
 
 [dependencies]
 libloading = { version = "0.8", optional = true }
-tokio = { version = "1.32.0", features = ["time", "rt-multi-thread", "macros"], optional = true }
+tokio = { version = "1.32.0", features = [
+    "time",
+    "rt-multi-thread",
+    "macros",
+], optional = true }
+serde = { version = "1.0.218", features = ["derive"], optional = true }
 
 [build-dependencies]
 bindgen = "0.69.4"
@@ -20,7 +25,7 @@ tokio = ["dep:tokio"]
 dynlink = ["libloading"]
 staticlink = []
 
-default = ["stream", "staticlink"]
+default = ["serde", "stream", "staticlink"]
 
 [lib]
 name = "ljmrs"
