@@ -693,15 +693,16 @@ impl LJMLibrary {
     /// Digitally writes an integer config
     /// Does not return a value
     #[doc(alias = "LJM_WriteLibraryConfigS")]
-    pub fn set_config<V: Into<c_double>>(
-        config_name: String,
+    pub fn set_config<V: Into<c_double>, S: Into<String>>(
+        config_name: S,
         config_value: V,
     ) -> Result<(), LJMError> {
         #[cfg(feature = "dynlink")]
         let d_write_to_addr: Symbol<extern "C" fn(*const c_char, c_double) -> i32> =
             unsafe { LJMLibrary::get_c_function(b"LJM_WriteLibraryConfigS")? };
 
-        let ntw = CString::new(config_name).map_err(|_| LJMError::CStringConversionFailed)?;
+        let ntw =
+            CString::new(config_name.into()).map_err(|_| LJMError::CStringConversionFailed)?;
         let vtw = c_double::from(config_value.into());
 
         #[cfg(feature = "dynlink")]
