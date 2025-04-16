@@ -5,9 +5,6 @@ use std::time::Instant;
 use ljmrs::LJMLibrary;
 
 fn stream() {
-    #[cfg(feature = "dynlink")]
-    unsafe { LJMLibrary::init(None) }.unwrap();
-    #[cfg(feature = "staticlink")]
     unsafe { LJMLibrary::init() }.unwrap();
 
     let open_call = LJMLibrary::open_jack(
@@ -24,7 +21,7 @@ fn stream() {
     // Do note that this examples will fail on
     // DEMO mode labjacks, as currently stream mode
     // is not supported for them.
-    LJMLibrary::stream_start(open_call, 2, 50_000.0, streams).expect("Failed to start stream");
+    LJMLibrary::stream_start_addr(open_call, 2, 50_000.0, streams).expect("Failed to start stream");
 
     assert!(LJMLibrary::is_stream_active());
 

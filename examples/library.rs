@@ -7,7 +7,7 @@ fn library() {
     {
         // We can specify the exact runtime location to fetch our library from.
         let unique_library_location = "/usr/lib/ljm/libLabJackM.dylib".to_string();
-        unsafe { LJMLibrary::init(Some(unique_library_location)) }.unwrap();
+        unsafe { LJMLibrary::with_path(unique_library_location) }.unwrap();
     }
     #[cfg(feature = "staticlink")]
     unsafe { LJMLibrary::init() }.unwrap();
