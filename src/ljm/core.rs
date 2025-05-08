@@ -1,3 +1,4 @@
+#[cfg(feature = "stream")]
 use std::collections::HashMap;
 use std::fmt::{Debug, Formatter};
 use std::sync::OnceLock;
@@ -122,7 +123,7 @@ impl LJMLibrary {
             .set(LJMLibrary {
                 library: Some(library),
                 #[cfg(feature = "stream")]
-                stream: RwLock::new(None),
+                stream: RwLock::new(HashMap::new()),
                 #[cfg(feature = "lua")]
                 module: RwLock::new(None),
             })
