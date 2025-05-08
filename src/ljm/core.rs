@@ -122,7 +122,7 @@ impl LJMLibrary {
             .set(LJMLibrary {
                 library: Some(library),
                 #[cfg(feature = "stream")]
-                stream: RwLock::new(None),
+                stream: RwLock::new(HashMap::new()),
                 #[cfg(feature = "lua")]
                 module: RwLock::new(None),
             })
